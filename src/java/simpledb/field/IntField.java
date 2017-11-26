@@ -1,4 +1,7 @@
-package simpledb;
+package simpledb.field;
+
+import simpledb.Predicate;
+import simpledb.Type;
 
 import java.io.*;
 
