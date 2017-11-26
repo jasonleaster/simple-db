@@ -9,8 +9,114 @@ import simpledb.systemtest.SimpleDbTestBase;
 import static org.junit.Assert.*;
 import junit.framework.Assert;
 import junit.framework.JUnit4TestAdapter;
+import simpledb.tuple.TupleDesc;
+import simpledb.util.Utility;
 
 public class TupleDescTest extends SimpleDbTestBase {
+
+    /**
+     * Unit test for TupleDesc.getSize()
+     */
+    @Test
+    public void getSize() {
+        int[] lengths = new int[] { 1, 2, 1000 };
+
+        for (int len: lengths) {
+            TupleDesc td = Utility.getTupleDesc(len);
+            assertEquals(len * Type.INT_TYPE.getLen(), td.getSize());
+        }
+    }
+
+    /**
+     * Unit test for TupleDesc.getType()
+     */
+    @Test public void getType() {
+        int[] lengths = new int[] { 1, 2, 1000 };
+
+        for (int len: lengths) {
+            TupleDesc td = Utility.getTupleDesc(len);
+            for (int i = 0; i < len; ++i)
+                assertEquals(Type.INT_TYPE, td.getFieldType(i));
+        }
+    }
+
+    /**
+     * Unit test for TupleDesc.numFields()
+     */
+    @Test
+    public void numFields() {
+        int[] lengths = new int[] { 1, 2, 1000 };
+
+        for (int len : lengths) {
+            TupleDesc td = Utility.getTupleDesc(len);
+            assertEquals(len, td.numFields());
+        }
+    }
+
+    /**
+     * Unit test for TupleDesc.nameToId()
+     */
+    @Test
+    public void nameToId() {
+        int[] lengths = new int[] { 1, 2, 1000 };
+        String prefix = "test";
+
+        for (int len: lengths) {
+            // Make sure you retrieve well-named fields
+            TupleDesc td = Utility.getTupleDesc(len, prefix);
+            for (int i = 0; i < len; ++i) {
+                assertEquals(i, td.fieldNameToIndex(prefix + i));
+            }
+
+            // Make sure you throw exception for non-existent fields
+            try {
+                td.fieldNameToIndex("foo");
+                Assert.fail("foo is not a valid field name");
+            } catch (NoSuchElementException e) {
+                // expected to get here
+            }
+
+            // Make sure you throw exception for null searches
+            try {
+                td.fieldNameToIndex(null);
+                Assert.fail("null is not a valid field name");
+            } catch (NoSuchElementException e) {
+                // expected to get here
+            }
+
+            // Make sure you throw exception when all field names are null
+            td = Utility.getTupleDesc(len);
+            try {
+                td.fieldNameToIndex(prefix);
+                Assert.fail("no fields are named, so you can't find it");
+            } catch (NoSuchElementException e) {
+                // expected to get here
+            }
+        }
+    }
+
+    @Test
+    public void testEquals() {
+        TupleDesc singleInt = new TupleDesc(new Type[]{Type.INT_TYPE});
+        TupleDesc singleInt2 = new TupleDesc(new Type[]{Type.INT_TYPE});
+        TupleDesc intString = new TupleDesc(new Type[]{Type.INT_TYPE, Type.STRING_TYPE});
+
+        // .equals() with null should return false
+        assertFalse(singleInt.equals(null));
+
+        // .equals() with the wrong type should return false
+        assertFalse(singleInt.equals(new Object()));
+
+        assertTrue(singleInt.equals(singleInt));
+        assertTrue(singleInt.equals(singleInt2));
+        assertTrue(singleInt2.equals(singleInt));
+        assertTrue(intString.equals(intString));
+
+        assertFalse(singleInt.equals(intString));
+        assertFalse(singleInt2.equals(intString));
+        assertFalse(intString.equals(singleInt));
+        assertFalse(intString.equals(singleInt2));
+    }
 
     /**
      * Unit test for TupleDesc.combine()
@@ -67,105 +173,6 @@ public class TupleDescTest extends SimpleDbTestBase {
         return true;
     }
 
-    /**
-     * Unit test for TupleDesc.getType()
-     */
-    @Test public void getType() {
-        int[] lengths = new int[] { 1, 2, 1000 };
-
-        for (int len: lengths) {
-            TupleDesc td = Utility.getTupleDesc(len);
-            for (int i = 0; i < len; ++i)
-                assertEquals(Type.INT_TYPE, td.getFieldType(i));
-        }
-    }
-    
-    /**
-     * Unit test for TupleDesc.nameToId()
-     */
-    @Test public void nameToId() {
-        int[] lengths = new int[] { 1, 2, 1000 };
-        String prefix = "test";
-        
-        for (int len: lengths) {
-            // Make sure you retrieve well-named fields
-            TupleDesc td = Utility.getTupleDesc(len, prefix);
-            for (int i = 0; i < len; ++i) {
-                assertEquals(i, td.fieldNameToIndex(prefix + i));
-            }
-            
-            // Make sure you throw exception for non-existent fields
-            try {
-                td.fieldNameToIndex("foo");
-                Assert.fail("foo is not a valid field name");
-            } catch (NoSuchElementException e) {
-                // expected to get here
-            }
-            
-            // Make sure you throw exception for null searches
-            try {
-                td.fieldNameToIndex(null);
-                Assert.fail("null is not a valid field name");
-            } catch (NoSuchElementException e) {
-                // expected to get here
-            }
-
-            // Make sure you throw exception when all field names are null
-            td = Utility.getTupleDesc(len);
-            try {
-                td.fieldNameToIndex(prefix);
-                Assert.fail("no fields are named, so you can't find it");
-            } catch (NoSuchElementException e) {
-                // expected to get here
-            }
-        }
-    }    
-
-    /**
-     * Unit test for TupleDesc.getSize()
-     */
-    @Test public void getSize() {
-        int[] lengths = new int[] { 1, 2, 1000 };
-
-        for (int len: lengths) {
-            TupleDesc td = Utility.getTupleDesc(len);
-            assertEquals(len * Type.INT_TYPE.getLen(), td.getSize());
-        }
-    }
-
-    /**
-     * Unit test for TupleDesc.numFields()
-     */
-    @Test public void numFields() {
-        int[] lengths = new int[] { 1, 2, 1000 };
-
-        for (int len : lengths) {
-            TupleDesc td = Utility.getTupleDesc(len);
-            assertEquals(len, td.numFields());
-        }
-    }
-
-    @Test public void testEquals() {
-        TupleDesc singleInt = new TupleDesc(new Type[]{Type.INT_TYPE});
-        TupleDesc singleInt2 = new TupleDesc(new Type[]{Type.INT_TYPE});
-        TupleDesc intString = new TupleDesc(new Type[]{Type.INT_TYPE, Type.STRING_TYPE});
-
-        // .equals() with null should return false
-        assertFalse(singleInt.equals(null));
-
-        // .equals() with the wrong type should return false
-        assertFalse(singleInt.equals(new Object()));
-
-        assertTrue(singleInt.equals(singleInt));
-        assertTrue(singleInt.equals(singleInt2));
-        assertTrue(singleInt2.equals(singleInt));
-        assertTrue(intString.equals(intString));
-
-        assertFalse(singleInt.equals(intString));
-        assertFalse(singleInt2.equals(intString));
-        assertFalse(intString.equals(singleInt));
-        assertFalse(intString.equals(singleInt2));
-    }
 
     /**
      * JUnit suite target
