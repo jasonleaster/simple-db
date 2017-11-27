@@ -1,5 +1,7 @@
 package simpledb;
 
+import simpledb.page.pageid.PageId;
+
 /** Unique identifier for BTreeInternalPage, BTreeLeafPage, BTreeHeaderPage
  *  and BTreeRootPtrPage objects. 
  */

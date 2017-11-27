@@ -1,5 +1,12 @@
 package simpledb;
 
+import simpledb.dbfile.HeapFile;
+import simpledb.field.IntField;
+import simpledb.page.HeapPage;
+import simpledb.page.pageid.HeapPageId;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.UUID;

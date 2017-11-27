@@ -1,5 +1,7 @@
 package simpledb;
 
+import simpledb.tuple.Tuple;
+
 import java.io.Serializable;
 
 /**
