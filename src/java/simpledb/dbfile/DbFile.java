@@ -1,5 +1,15 @@
 
-package simpledb;
+package simpledb.dbfile;
+
+import simpledb.BufferPool;
+import simpledb.Catalog;
+import simpledb.DbException;
+import simpledb.page.Page;
+import simpledb.page.pageid.PageId;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.TransactionId;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
 
 import java.util.*;
 import java.io.*;

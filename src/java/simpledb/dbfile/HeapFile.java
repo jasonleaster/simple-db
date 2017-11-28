@@ -1,4 +1,16 @@
-package simpledb;
+package simpledb.dbfile;
+
+import simpledb.BufferPool;
+import simpledb.Database;
+import simpledb.DbException;
+import simpledb.page.HeapPage;
+import simpledb.page.Page;
+import simpledb.page.pageid.HeapPageId;
+import simpledb.page.pageid.PageId;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.TransactionId;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
 
 import java.io.*;
 import java.util.*;
@@ -10,10 +22,16 @@ import java.util.*;
  * closely with HeapPage. The format of HeapPages is described in the HeapPage
  * constructor.
  * 
- * @see simpledb.HeapPage#HeapPage
+ * @see HeapPage#HeapPage
  * @author Sam Madden
  */
 public class HeapFile implements DbFile {
+
+    private File file;
+    private String tableName;
+    private TupleDesc tupleDesc;
+    private int pageNo;
+    private Map<PageId, Page> container;
 
     /**
      * Constructs a heap file backed by the specified file.
@@ -24,6 +42,42 @@ public class HeapFile implements DbFile {
      */
     public HeapFile(File f, TupleDesc td) {
         // some code goes here
+        this.file = f;
+        this.tupleDesc = td;
+        this.pageNo = 0;
+        this.container = new HashMap<>();
+
+        final int pageSize = BufferPool.getPageSize();
+        this.tableName = f.getName();
+
+        /*
+         * 不安全，不推荐，重新思考解决方案
+         * Comments:
+         *  我个人觉得一个对象没有初始化完全的时候就对外暴露是不安全，不正确的做法
+         * 但是目前我项目到其他的解决方案
+         */
+        Database.getCatalog().addTable(this, tableName);
+
+        /*
+         * We have to get the tableId from catalog, otherwise we can't guarantee the
+         * consistency of tableId is correct.
+         */
+        final int tableId = Database.getCatalog().getTableId(tableName);
+
+        byte[] pageBuffer = new byte[pageSize];
+
+        try {
+            FileInputStream fis = new FileInputStream(f);
+
+            int offset = 0;
+            while (fis.read(pageBuffer,offset, pageSize) > 0) {
+                HeapPageId heapPageId = new HeapPageId(tableId, pageNo++);
+                HeapPage heapPage = new HeapPage(heapPageId, pageBuffer);
+                container.put(heapPageId, heapPage);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -33,7 +87,7 @@ public class HeapFile implements DbFile {
      */
     public File getFile() {
         // some code goes here
-        return null;
+        return file;
     }
 
     /**
@@ -47,7 +101,8 @@ public class HeapFile implements DbFile {
      */
     public int getId() {
         // some code goes here
-        throw new UnsupportedOperationException("implement this");
+        //throw new UnsupportedOperationException("implement this");
+        return file.getAbsoluteFile().hashCode();
     }
 
     /**
@@ -57,13 +112,13 @@ public class HeapFile implements DbFile {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        throw new UnsupportedOperationException("implement this");
+        //throw new UnsupportedOperationException("implement this");
+        return this.tupleDesc;
     }
 
     // see DbFile.java for javadocs
     public Page readPage(PageId pid) {
-        // some code goes here
-        return null;
+        return container.get(pid);
     }
 
     // see DbFile.java for javadocs
@@ -76,8 +131,7 @@ public class HeapFile implements DbFile {
      * Returns the number of pages in this HeapFile.
      */
     public int numPages() {
-        // some code goes here
-        return 0;
+        return pageNo;
     }
 
     // see DbFile.java for javadocs
@@ -99,8 +153,50 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
         // some code goes here
-        return null;
+        return new HeapFileIterator();
     }
 
+    private class HeapFileIterator extends AbstractDbFileIterator {
+
+        private int iterIndex = 0;
+        private List<Iterator<Tuple>> iterators = new ArrayList<>();
+
+        @Override
+        public void open() throws DbException, TransactionAbortedException {
+            for (Map.Entry<PageId, Page> entry : container.entrySet()) {
+                HeapPage page = (HeapPage) entry.getValue();
+                iterators.add(page.iterator());
+            }
+        }
+
+        @Override
+        protected Tuple readNext() throws DbException, TransactionAbortedException {
+            if (iterators.size() == 0) {
+                return null;
+            }
+
+            Iterator<Tuple> iterator = iterators.get(iterIndex);
+            while (!iterator.hasNext() && iterIndex < iterators.size()) {
+                iterIndex++;
+            }
+
+            if (iterIndex == iterators.size()) {
+                return null;
+            } else {
+                return iterator.next();
+            }
+        }
+
+        @Override
+        public void rewind() throws DbException, TransactionAbortedException {
+            open();
+        }
+
+        @Override
+        public void close() {
+            super.close();
+            iterators.clear();
+        }
+    }
 }
 

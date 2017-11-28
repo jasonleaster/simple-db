@@ -1,5 +1,9 @@
 package simpledb;
 
+import simpledb.dbfile.DbFileIterator;
+import simpledb.dbfile.HeapFile;
+import simpledb.page.HeapPage;
+import simpledb.page.pageid.HeapPageId;
 import simpledb.systemtest.SimpleDbTestBase;
 import simpledb.systemtest.SystemTestUtil;
 
@@ -10,6 +14,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 import junit.framework.JUnit4TestAdapter;
+import simpledb.tuple.TupleDesc;
+import simpledb.util.Utility;
 
 public class HeapFileReadTest extends SimpleDbTestBase {
     private HeapFile hf;
