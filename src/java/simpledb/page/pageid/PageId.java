@@ -1,4 +1,6 @@
-package simpledb;
+package simpledb.page.pageid;
+
+import simpledb.BufferPool;
 
 /** PageId is an interface to a specific page of a specific table. */
 public interface PageId {
