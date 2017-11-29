@@ -2,10 +2,12 @@ package simpledb;
 
 import org.junit.Test;
 
+import simpledb.operator.Predicate;
 import simpledb.systemtest.SimpleDbTestBase;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import junit.framework.JUnit4TestAdapter;
+import simpledb.util.Utility;
 
 public class PredicateTest extends SimpleDbTestBase{
 

@@ -1,4 +1,4 @@
-package simpledb;
+package simpledb.operator;
 
 import simpledb.field.Field;
 import simpledb.tuple.Tuple;
@@ -11,6 +11,10 @@ import java.io.Serializable;
 public class Predicate implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    private int filedIndex;
+    private Op operator;
+    private Field operand;
 
     /** Constants used for return codes in Field.compare */
     public enum Op implements Serializable {
@@ -59,6 +63,9 @@ public class Predicate implements Serializable {
      */
     public Predicate(int field, Op op, Field operand) {
         // some code goes here
+        this.filedIndex = field;
+        this.operator = op;
+        this.operand = operand;
     }
 
     /**
@@ -67,7 +74,7 @@ public class Predicate implements Serializable {
     public int getField()
     {
         // some code goes here
-        return -1;
+        return filedIndex;
     }
 
     /**
@@ -76,7 +83,7 @@ public class Predicate implements Serializable {
     public Op getOp()
     {
         // some code goes here
-        return null;
+        return operator;
     }
     
     /**
@@ -85,7 +92,7 @@ public class Predicate implements Serializable {
     public Field getOperand()
     {
         // some code goes here
-        return null;
+        return operand;
     }
     
     /**
@@ -100,15 +107,20 @@ public class Predicate implements Serializable {
      */
     public boolean filter(Tuple t) {
         // some code goes here
-        return false;
+        Field otherOperand = t.getField(filedIndex);
+        return otherOperand.compare(operator, operand);
     }
 
     /**
      * Returns something useful, like "f = field_id op = op_string operand =
      * operand_string"
      */
+    @Override
     public String toString() {
-        // some code goes here
-        return "";
+        return "Predicate{" +
+                "filedIndex=" + filedIndex +
+                ", operator=" + operator +
+                ", operand=" + operand +
+                '}';
     }
 }
