@@ -69,11 +69,12 @@ public class HeapFile implements DbFile {
         try {
             FileInputStream fis = new FileInputStream(f);
 
-            int offset = 0;
-            while (fis.read(pageBuffer,offset, pageSize) > 0) {
+            while (fis.available() > 0 && fis.read(pageBuffer) > 0) {
                 HeapPageId heapPageId = new HeapPageId(tableId, pageNo++);
                 HeapPage heapPage = new HeapPage(heapPageId, pageBuffer);
                 container.put(heapPageId, heapPage);
+
+                pageBuffer = new byte[pageSize];
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -176,8 +177,13 @@ public class HeapFile implements DbFile {
             }
 
             Iterator<Tuple> iterator = iterators.get(iterIndex);
-            while (!iterator.hasNext() && iterIndex < iterators.size()) {
+            while (!iterator.hasNext()) {
                 iterIndex++;
+                if (iterIndex < iterators.size()) {
+                    iterator = iterators.get(iterIndex);
+                } else {
+                    break;
+                }
             }
 
             if (iterIndex == iterators.size()) {
@@ -189,6 +195,7 @@ public class HeapFile implements DbFile {
 
         @Override
         public void rewind() throws DbException, TransactionAbortedException {
+            iterators.clear();
             open();
         }
 
