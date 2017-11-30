@@ -3,22 +3,27 @@ package simpledb.dbfile;
 import simpledb.BufferPool;
 import simpledb.Database;
 import simpledb.DbException;
+import simpledb.Permissions;
+import simpledb.TransactionId;
+import simpledb.exception.TransactionAbortedException;
 import simpledb.page.HeapPage;
 import simpledb.page.Page;
 import simpledb.page.pageid.HeapPageId;
 import simpledb.page.pageid.PageId;
-import simpledb.exception.TransactionAbortedException;
-import simpledb.TransactionId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * HeapFile is an implementation of a DbFile that stores a collection of tuples
  * in no particular order. Tuples are stored on pages, each of which is a fixed
- * size, and the file is simply a collection of those pages. HeapFile works
+ * size, and the diskFile is simply a collection of those pages. HeapFile works
  * closely with HeapPage. The format of HeapPages is described in the HeapPage
  * constructor.
  * 
@@ -27,58 +32,30 @@ import java.util.*;
  */
 public class HeapFile implements DbFile {
 
-    private File file;
-    private String tableName;
-    private TupleDesc tupleDesc;
-    private int pageNo;
-    private Map<PageId, Page> container;
+    private long pageNo;
+    private final File diskFile;
+    private final String tableName;
+    private final TupleDesc tupleDesc;
+    private final int tableId;
+
 
     /**
-     * Constructs a heap file backed by the specified file.
+     * Constructs a heap diskFile backed by the specified diskFile.
      * 
-     * @param f
-     *            the file that stores the on-disk backing store for this heap
-     *            file.
+     * @param diskFile the diskFile that stores the on-disk backing
+     *         store for this heap diskFile.
      */
-    public HeapFile(File f, TupleDesc td) {
+    public HeapFile(File diskFile, TupleDesc td) {
         // some code goes here
-        this.file = f;
         this.tupleDesc = td;
-        this.pageNo = 0;
-        this.container = new HashMap<>();
 
-        final int pageSize = BufferPool.getPageSize();
-        this.tableName = f.getName();
+        this.diskFile = diskFile;
+        this.tableName = diskFile.getName();
+        this.tableId = diskFile.getAbsoluteFile().hashCode();
 
-        /*
-         * 不安全，不推荐，重新思考解决方案
-         * Comments:
-         *  我个人觉得一个对象没有初始化完全的时候就对外暴露是不安全，不正确的做法
-         * 但是目前我项目到其他的解决方案
-         */
-        Database.getCatalog().addTable(this, tableName);
-
-        /*
-         * We have to get the tableId from catalog, otherwise we can't guarantee the
-         * consistency of tableId is correct.
-         */
-        final int tableId = Database.getCatalog().getTableId(tableName);
-
-        byte[] pageBuffer = new byte[pageSize];
-
-        try {
-            FileInputStream fis = new FileInputStream(f);
-
-            while (fis.available() > 0 && fis.read(pageBuffer) > 0) {
-                HeapPageId heapPageId = new HeapPageId(tableId, pageNo++);
-                HeapPage heapPage = new HeapPage(heapPageId, pageBuffer);
-                container.put(heapPageId, heapPage);
-
-                pageBuffer = new byte[pageSize];
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.pageNo =
+                (diskFile.length() - 1 + BufferPool.getPageSize())
+                / BufferPool.getPageSize() ;
     }
 
     /**
@@ -88,22 +65,22 @@ public class HeapFile implements DbFile {
      */
     public File getFile() {
         // some code goes here
-        return file;
+        return diskFile;
     }
 
     /**
      * Returns an ID uniquely identifying this HeapFile. Implementation note:
      * you will need to generate this tableid somewhere to ensure that each
      * HeapFile has a "unique id," and that you always return the same value for
-     * a particular HeapFile. We suggest hashing the absolute file name of the
-     * file underlying the heapfile, i.e. f.getAbsoluteFile().hashCode().
+     * a particular HeapFile. We suggest hashing the absolute diskFile name of the
+     * diskFile underlying the heapfile, i.e. f.getAbsoluteFile().hashCode().
      * 
      * @return an ID uniquely identifying this HeapFile.
      */
     public int getId() {
         // some code goes here
         //throw new UnsupportedOperationException("implement this");
-        return file.getAbsoluteFile().hashCode();
+        return tableId;
     }
 
     /**
@@ -118,8 +95,26 @@ public class HeapFile implements DbFile {
     }
 
     // see DbFile.java for javadocs
-    public Page readPage(PageId pid) {
-        return container.get(pid);
+    public Page readPage(PageId pageId) {
+        final int pageSize = BufferPool.getPageSize();
+        final int offset = pageId.getPageNumber() * pageSize;
+        final byte[] pageBuffer = new byte[pageSize];
+
+        HeapPage heapPage = null;
+        try {
+            FileInputStream fis = new FileInputStream(diskFile);
+            if (fis.available() > 0) {
+                if (fis.read(pageBuffer, offset, pageSize) <= 0) {
+                    System.out.println("Failed to read page:" + pageId.getPageNumber());
+                } else {
+                    heapPage = new HeapPage((HeapPageId) pageId, pageBuffer);
+                }
+            }
+        } catch (IOException e) {
+
+        }
+
+        return heapPage;
     }
 
     // see DbFile.java for javadocs
@@ -132,7 +127,8 @@ public class HeapFile implements DbFile {
      * Returns the number of pages in this HeapFile.
      */
     public int numPages() {
-        return pageNo;
+        // 这里的接口建议改成long类型
+        return (int) pageNo;
     }
 
     // see DbFile.java for javadocs
@@ -164,9 +160,12 @@ public class HeapFile implements DbFile {
 
         @Override
         public void open() throws DbException, TransactionAbortedException {
-            for (Map.Entry<PageId, Page> entry : container.entrySet()) {
-                HeapPage page = (HeapPage) entry.getValue();
-                iterators.add(page.iterator());
+            for (int i = 0; i < pageNo; i++) {
+                TransactionId transactionId = new TransactionId();
+                PageId pageId = new HeapPageId(tableId, i);
+                Page page = Database.getBufferPool().getPage(transactionId, pageId, Permissions.READ_WRITE);
+
+                iterators.add(((HeapPage) page).iterator());
             }
         }
 
