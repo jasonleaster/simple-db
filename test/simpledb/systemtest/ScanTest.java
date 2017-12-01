@@ -1,8 +1,18 @@
 package simpledb.systemtest;
 
-import simpledb.systemtest.SystemTestUtil;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
+import simpledb.BufferPool;
+import simpledb.Database;
+import simpledb.DbException;
+import simpledb.TransactionId;
+import simpledb.dbfile.HeapFile;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.operator.SeqScan;
+import simpledb.page.Page;
+import simpledb.page.pageid.PageId;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
+import simpledb.util.Utility;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,9 +20,8 @@ import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Random;
 
-import org.junit.Test;
-
-import simpledb.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Dumps the contents of a table.
@@ -22,34 +31,45 @@ import simpledb.*;
 public class ScanTest extends SimpleDbTestBase {
     private final static Random r = new Random();
 
-    /** Tests the scan operator for a table with the specified dimensions. */
+    /**
+     * Tests the scan operator for a table with the specified dimensions.
+     */
     private void validateScan(int[] columnSizes, int[] rowSizes)
             throws IOException, DbException, TransactionAbortedException {
         for (int columns : columnSizes) {
             for (int rows : rowSizes) {
-                ArrayList<ArrayList<Integer>> tuples = new ArrayList<ArrayList<Integer>>();
-                HeapFile f = SystemTestUtil.createRandomHeapFile(columns, rows, null, tuples);
-                SystemTestUtil.matchTuples(f, tuples);
+                ArrayList<ArrayList<Integer>> tuples = new ArrayList<>();
+                HeapFile heapFile = SystemTestUtil
+                        .createRandomHeapFile(columns, rows, null, tuples);
+
+                SystemTestUtil.matchTuples(heapFile, tuples);
                 Database.resetBufferPool(BufferPool.DEFAULT_PAGES);
             }
         }
     }
 
-    /** Scan 1-4 columns. */
-    @Test public void testSmall() throws IOException, DbException, TransactionAbortedException {
+    /**
+     * Scan 1-4 columns.
+     */
+    @Test
+    public void testSmall() throws IOException, DbException, TransactionAbortedException {
         int[] columnSizes = new int[]{1, 2, 3, 4};
         int[] rowSizes =
                 new int[]{0, 1, 2, 511, 512, 513, 1023, 1024, 1025, 4096 + r.nextInt(4096)};
         validateScan(columnSizes, rowSizes);
     }
 
-    /** Test that rewinding a SeqScan iterator works. */
-    @Test public void testRewind() throws IOException, DbException, TransactionAbortedException {
-        ArrayList<ArrayList<Integer>> tuples = new ArrayList<ArrayList<Integer>>();
-        HeapFile f = SystemTestUtil.createRandomHeapFile(2, 1000, null, tuples);
+    /**
+     * Test that rewinding a SeqScan iterator works.
+     */
+    @Test
+    public void testRewind() throws IOException, DbException, TransactionAbortedException {
+        ArrayList<ArrayList<Integer>> tuples = new ArrayList<>();
+        HeapFile heapFile = SystemTestUtil
+                .createRandomHeapFile(2, 1000, null, tuples);
 
         TransactionId tid = new TransactionId();
-        SeqScan scan = new SeqScan(tid, f.getId(), "table");
+        SeqScan scan = new SeqScan(tid, heapFile.getId(), "table");
         scan.open();
         for (int i = 0; i < 100; ++i) {
             assertTrue(scan.hasNext());
@@ -67,11 +87,17 @@ public class ScanTest extends SimpleDbTestBase {
         Database.getBufferPool().transactionComplete(tid);
     }
 
-    /** Verifies that the buffer pool is actually caching data.
+    /**
+     * Verifies that the buffer pool is actually caching data.
+     *
      * @throws TransactionAbortedException
-     * @throws DbException */
-    @Test public void testCache() throws IOException, DbException, TransactionAbortedException {
-        /** Counts the number of readPage operations. */
+     * @throws DbException
+     */
+    @Test
+    public void testCache() throws IOException, DbException, TransactionAbortedException {
+        /*
+         Counts the number of readPage operations.
+         */
         class InstrumentedHeapFile extends HeapFile {
             public InstrumentedHeapFile(File f, TupleDesc td) {
                 super(f, td);
@@ -89,7 +115,7 @@ public class ScanTest extends SimpleDbTestBase {
         // Create the table
         final int PAGES = 30;
         ArrayList<ArrayList<Integer>> tuples = new ArrayList<ArrayList<Integer>>();
-        File f = SystemTestUtil.createRandomHeapFileUnopened(1, 992*PAGES, 1000, null, tuples);
+        File f = SystemTestUtil.createRandomHeapFileUnopened(1, 992 * PAGES, 1000, null, tuples);
         TupleDesc td = Utility.getTupleDesc(1);
         InstrumentedHeapFile table = new InstrumentedHeapFile(f, td);
         Database.getCatalog().addTable(table, SystemTestUtil.getUUID());
@@ -104,7 +130,9 @@ public class ScanTest extends SimpleDbTestBase {
         assertEquals(0, table.readCount);
     }
 
-    /** Make test compatible with older version of ant. */
+    /**
+     * Make test compatible with older version of ant.
+     */
     public static junit.framework.Test suite() {
         return new junit.framework.JUnit4TestAdapter(ScanTest.class);
     }
