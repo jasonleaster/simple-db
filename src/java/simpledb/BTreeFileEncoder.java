@@ -3,7 +3,18 @@ package simpledb;
 import java.io.*;
 import java.util.*;
 
-import simpledb.Predicate.Op;
+import simpledb.operator.Predicate.Op;
+import simpledb.dbfile.BTreeFile;
+import simpledb.dbfile.DbFileIterator;
+import simpledb.dbfile.HeapFile;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.page.BTreeInternalPage;
+import simpledb.page.BTreeLeafPage;
+import simpledb.page.pageid.BTreePageId;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
+import simpledb.util.BTreeUtility;
+import simpledb.util.Utility;
 
 /**
  * BTreeFileEncoder reads a comma delimited text file and converts it to
@@ -23,8 +34,8 @@ public class BTreeFileEncoder {
 	 * @param numFields - the number of fields in each tuple
 	 * @return the BTreeFile
 	 */
-	public static BTreeFile convert(ArrayList<ArrayList<Integer>> tuples, File hFile, 
-			File bFile, int keyField, int numFields) throws IOException {
+	public static BTreeFile convert(ArrayList<ArrayList<Integer>> tuples, File hFile,
+                                    File bFile, int keyField, int numFields) throws IOException {
 		File tempInput = File.createTempFile("tempTable", ".txt");
 		tempInput.deleteOnExit();
 		BufferedWriter bw = new BufferedWriter(new FileWriter(tempInput));
@@ -225,7 +236,7 @@ public class BTreeFileEncoder {
 			nrecbytes += typeAr[i].getLen();
 		}
 		// pointerbytes: left sibling pointer, right sibling pointer, parent pointer
-		int leafpointerbytes = 3 * BTreeLeafPage.INDEX_SIZE; 
+		int leafpointerbytes = 3 * BTreeLeafPage.INDEX_SIZE;
 		int nrecords = (npagebytes * 8 - leafpointerbytes * 8) /  (nrecbytes * 8 + 1);  //floor comes for free
 
 		int nentrybytes = keyType.getLen() + BTreeInternalPage.INDEX_SIZE;

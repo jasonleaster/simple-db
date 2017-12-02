@@ -1,4 +1,9 @@
-package simpledb;
+package simpledb.operator;
+
+import simpledb.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
 
 import java.util.*;
 
@@ -9,24 +14,31 @@ public class Join extends Operator {
 
     private static final long serialVersionUID = 1L;
 
+    private JoinPredicate joinPredicate;
+    private OpIterator child1;
+    private OpIterator child2;
+
     /**
      * Constructor. Accepts two children to join and the predicate to join them
      * on
      * 
-     * @param p
+     * @param joinPredicate
      *            The predicate to use to join the children
      * @param child1
      *            Iterator for the left(outer) relation to join
      * @param child2
      *            Iterator for the right(inner) relation to join
      */
-    public Join(JoinPredicate p, OpIterator child1, OpIterator child2) {
+    public Join(JoinPredicate joinPredicate, OpIterator child1, OpIterator child2) {
         // some code goes here
+        this.joinPredicate = joinPredicate;
+        this.child1 = child1;
+        this.child2 = child2;
     }
 
     public JoinPredicate getJoinPredicate() {
         // some code goes here
-        return null;
+        return joinPredicate;
     }
 
     /**
@@ -50,7 +62,7 @@ public class Join extends Operator {
     }
 
     /**
-     * @see simpledb.TupleDesc#merge(TupleDesc, TupleDesc) for possible
+     * @see TupleDesc#merge(TupleDesc, TupleDesc) for possible
      *      implementation logic.
      */
     public TupleDesc getTupleDesc() {

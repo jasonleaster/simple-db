@@ -1,6 +1,8 @@
 package simpledb;
 
-/** A LogicalFilterNode represents the parameters of a filter in the WHERE clause of a query. 
+import simpledb.operator.Predicate;
+
+/** A LogicalFilterNode represents the parameters of a filter in the WHERE clause of a query.
     <p>
     Filter is of the form t.f p c
     <p>

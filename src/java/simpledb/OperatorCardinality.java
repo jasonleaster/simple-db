@@ -1,6 +1,16 @@
 package simpledb;
 
 //import java.util.HashMap;
+import simpledb.aggregator.Aggregator;
+import simpledb.operator.Aggregate;
+import simpledb.operator.Filter;
+import simpledb.operator.HashEquiJoin;
+import simpledb.operator.Join;
+import simpledb.operator.OpIterator;
+import simpledb.operator.Operator;
+import simpledb.operator.Predicate;
+import simpledb.operator.SeqScan;
+
 import java.util.Map;
 
 /**

@@ -1,5 +1,9 @@
 package simpledb;
 
+import simpledb.field.Field;
+import simpledb.page.BTreeInternalPage;
+import simpledb.page.pageid.BTreePageId;
+
 import java.io.Serializable;
 
 /**

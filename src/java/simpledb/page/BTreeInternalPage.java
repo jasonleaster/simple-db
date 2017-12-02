@@ -1,9 +1,21 @@
-package simpledb;
+package simpledb.page;
 
 import java.util.*;
 import java.io.*;
 
-import simpledb.Predicate.Op;
+import simpledb.BTreeEntry;
+import simpledb.page.pageid.BTreePageId;
+import simpledb.BufferPool;
+import simpledb.Catalog;
+import simpledb.Database;
+import simpledb.DbException;
+import simpledb.Debug;
+import simpledb.field.Field;
+import simpledb.field.IntField;
+import simpledb.operator.Predicate.Op;
+import simpledb.RecordId;
+import simpledb.Type;
+import simpledb.dbfile.BTreeFile;
 
 /**
  * Each instance of BTreeInternalPage stores data for one page of a BTreeFile and 

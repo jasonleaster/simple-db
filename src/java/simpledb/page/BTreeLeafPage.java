@@ -1,4 +1,18 @@
-package simpledb;
+package simpledb.page;
+
+import simpledb.page.pageid.BTreePageId;
+import simpledb.BufferPool;
+import simpledb.Catalog;
+import simpledb.Database;
+import simpledb.DbException;
+import simpledb.Debug;
+import simpledb.field.Field;
+import simpledb.field.IntField;
+import simpledb.operator.Predicate;
+import simpledb.RecordId;
+import simpledb.Type;
+import simpledb.dbfile.BTreeFile;
+import simpledb.tuple.Tuple;
 
 import java.util.*;
 import java.io.*;
@@ -262,7 +276,7 @@ public class BTreeLeafPage extends BTreePage {
 		}
 
 		// padding
-		int zerolen = BufferPool.getPageSize() - (header.length + td.getSize() * tuples.length + 3 * INDEX_SIZE); //- numSlots * td.getSize();
+		int zerolen = BufferPool.getPageSize() - (header.length + td.getSize() * tuples.length + 3 * INDEX_SIZE); //- numSlots * tupleDesc.getSize();
 		byte[] zeroes = new byte[zerolen];
 		try {
 			dos.write(zeroes, 0, zerolen);

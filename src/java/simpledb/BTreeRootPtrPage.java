@@ -1,5 +1,8 @@
 package simpledb;
 
+import simpledb.page.Page;
+import simpledb.page.pageid.BTreePageId;
+
 import java.io.*;
 
 /**

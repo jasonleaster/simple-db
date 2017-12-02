@@ -1,5 +1,9 @@
 package simpledb;
 
+import simpledb.dbfile.HeapFile;
+import simpledb.page.HeapPage;
+import simpledb.util.Utility;
+
 import java.io.*;
 import java.util.ArrayList;
 

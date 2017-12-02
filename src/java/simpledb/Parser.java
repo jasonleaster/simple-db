@@ -8,6 +8,16 @@ import java.util.*;
 import jline.ArgumentCompletor;
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.field.IntField;
+import simpledb.field.StringField;
+import simpledb.operator.Delete;
+import simpledb.operator.Insert;
+import simpledb.operator.OpIterator;
+import simpledb.operator.Operator;
+import simpledb.operator.Predicate;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
 
 public class Parser {
     static boolean explain = false;

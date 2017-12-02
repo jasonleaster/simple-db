@@ -1,5 +1,10 @@
 package simpledb;
 
+import simpledb.operator.Join;
+import simpledb.operator.JoinPredicate;
+import simpledb.operator.OpIterator;
+import simpledb.operator.Predicate;
+
 import java.util.*;
 
 import javax.swing.*;

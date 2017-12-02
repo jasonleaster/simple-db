@@ -1,4 +1,12 @@
-package simpledb;
+package simpledb.operator;
+
+import simpledb.aggregator.Aggregator;
+import simpledb.DbException;
+import simpledb.aggregator.IntegerAggregator;
+import simpledb.aggregator.StringAggregator;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
 
 import java.util.*;
 
@@ -36,7 +44,7 @@ public class Aggregate extends Operator {
     /**
      * @return If this aggregate is accompanied by a groupby, return the groupby
      *         field index in the <b>INPUT</b> tuples. If not, return
-     *         {@link simpledb.Aggregator#NO_GROUPING}
+     *         {@link Aggregator#NO_GROUPING}
      * */
     public int groupField() {
 	// some code goes here
@@ -83,7 +91,7 @@ public class Aggregate extends Operator {
     }
 
     public void open() throws NoSuchElementException, DbException,
-	    TransactionAbortedException {
+            TransactionAbortedException {
 	// some code goes here
     }
 

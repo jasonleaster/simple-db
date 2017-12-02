@@ -1,6 +1,9 @@
 
 package simpledb;
 
+import simpledb.page.Page;
+import simpledb.page.pageid.PageId;
+
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
@@ -192,7 +195,7 @@ public class LogFile {
         @param before The before image of the page
         @param after The after image of the page
 
-        @see simpledb.Page#getBeforeImage
+        @see Page#getBeforeImage
     */
     public  synchronized void logWrite(TransactionId tid, Page before,
                                        Page after)

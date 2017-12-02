@@ -1,5 +1,7 @@
 package simpledb;
 
+import simpledb.page.pageid.PageId;
+
 import java.io.Serializable;
 
 /**
@@ -79,8 +81,7 @@ public class RecordId implements Serializable {
     public int hashCode() {
         // some code goes here
         // throw new UnsupportedOperationException("implement this");
-        return this.pageId.hashCode() + this.tupleNumber;
-
+        return this.pageId.getTableId() + this.pageId.getPageNumber() + this.tupleNumber;
     }
 
 }

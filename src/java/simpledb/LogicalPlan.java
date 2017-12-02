@@ -1,4 +1,18 @@
 package simpledb;
+import simpledb.aggregator.Aggregator;
+import simpledb.field.Field;
+import simpledb.field.IntField;
+import simpledb.field.StringField;
+import simpledb.operator.Aggregate;
+import simpledb.dbfile.HeapFile;
+import simpledb.operator.Filter;
+import simpledb.operator.OpIterator;
+import simpledb.operator.OrderBy;
+import simpledb.operator.Predicate;
+import simpledb.operator.SeqScan;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
+
 import java.util.Map;
 import java.util.Vector;
 import java.util.HashMap;

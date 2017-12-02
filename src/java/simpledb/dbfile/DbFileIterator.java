@@ -1,4 +1,9 @@
-package simpledb;
+package simpledb.dbfile;
+
+import simpledb.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.tuple.Tuple;
+
 import java.util.*;
 
 /**

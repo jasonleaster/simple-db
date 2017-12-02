@@ -1,7 +1,14 @@
 package simpledb;
 
-import java.io.*;
+import simpledb.dbfile.DbFile;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.page.Page;
+import simpledb.page.pageid.PageId;
+import simpledb.tuple.Tuple;
 
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,6 +33,10 @@ public class BufferPool {
     constructor instead. */
     public static final int DEFAULT_PAGES = 50;
 
+    private final int numPages;
+
+    private Map<PageId, Page> bufferPool = new ConcurrentHashMap<>();
+
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -33,6 +44,7 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
+        this.numPages = numPages;
     }
     
     public static int getPageSize() {
@@ -64,10 +76,16 @@ public class BufferPool {
      * @param pid the ID of the requested page
      * @param perm the requested permissions on the page
      */
-    public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
+    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+        Page page = bufferPool.get(pid);
+        if (page == null) {
+            DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            page = dbFile.readPage(pid);
+            bufferPool.put(pid, page);
+        }
+        return page;
     }
 
     /**

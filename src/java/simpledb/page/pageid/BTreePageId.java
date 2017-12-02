@@ -1,6 +1,6 @@
-package simpledb;
+package simpledb.page.pageid;
 
-import simpledb.page.pageid.PageId;
+import simpledb.BufferPool;
 
 /** Unique identifier for BTreeInternalPage, BTreeLeafPage, BTreeHeaderPage
  *  and BTreeRootPtrPage objects. 

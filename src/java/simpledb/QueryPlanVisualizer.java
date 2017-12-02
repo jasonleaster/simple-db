@@ -3,7 +3,20 @@ package simpledb;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Iterator;
-import simpledb.TupleDesc.TDItem;
+
+import simpledb.aggregator.Aggregator;
+import simpledb.operator.Aggregate;
+import simpledb.operator.Filter;
+import simpledb.operator.HashEquiJoin;
+import simpledb.operator.Join;
+import simpledb.operator.JoinPredicate;
+import simpledb.operator.OpIterator;
+import simpledb.operator.Operator;
+import simpledb.operator.OrderBy;
+import simpledb.operator.Predicate;
+import simpledb.operator.SeqScan;
+import simpledb.tuple.TupleDesc;
+import simpledb.tuple.TupleDesc.TDItem;
 
 public class QueryPlanVisualizer {
 

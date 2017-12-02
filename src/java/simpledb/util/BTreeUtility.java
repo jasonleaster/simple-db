@@ -1,4 +1,4 @@
-package simpledb;
+package simpledb.util;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -12,7 +12,17 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 
-import simpledb.Predicate.Op;
+import simpledb.BTreeEntry;
+import simpledb.BTreeFileEncoder;
+import simpledb.BTreeRootPtrPage;
+import simpledb.BufferPool;
+import simpledb.Database;
+import simpledb.DbException;
+import simpledb.IndexPredicate;
+import simpledb.operator.Predicate.Op;
+import simpledb.RecordId;
+import simpledb.TransactionId;
+import simpledb.Type;
 import simpledb.dbfile.BTreeFile;
 import simpledb.dbfile.DbFileIterator;
 import simpledb.exception.TransactionAbortedException;
@@ -24,7 +34,6 @@ import simpledb.page.BTreePage;
 import simpledb.page.pageid.BTreePageId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
-import simpledb.util.Utility;
 
 /** Helper methods used for testing and implementing random features. */
 public class BTreeUtility {
@@ -498,7 +507,7 @@ public class BTreeUtility {
 	 * @return a handle to the Thread that will attempt insertion after it
 	 *   has been started
 	 */
-	static class BTreeWriter extends Thread {
+	public static class BTreeWriter extends Thread {
 
 		TransactionId tid;
 		BTreeFile bf;

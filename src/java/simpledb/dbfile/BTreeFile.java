@@ -1,9 +1,29 @@
-package simpledb;
+package simpledb.dbfile;
 
 import java.io.*;
 import java.util.*;
 
-import simpledb.Predicate.Op;
+import simpledb.BTreeEntry;
+import simpledb.BTreeHeaderPage;
+import simpledb.page.BTreeInternalPage;
+import simpledb.page.BTreeLeafPage;
+import simpledb.page.BTreePage;
+import simpledb.page.pageid.BTreePageId;
+import simpledb.BTreeRootPtrPage;
+import simpledb.BufferPool;
+import simpledb.Database;
+import simpledb.DbException;
+import simpledb.Debug;
+import simpledb.field.Field;
+import simpledb.IndexPredicate;
+import simpledb.page.Page;
+import simpledb.page.pageid.PageId;
+import simpledb.Permissions;
+import simpledb.operator.Predicate.Op;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.TransactionId;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
 
 /**
  * BTreeFile is an implementation of a DbFile that stores a B+ tree.
@@ -12,8 +32,8 @@ import simpledb.Predicate.Op;
  * in sorted order. BTreeFile works closely with BTreeLeafPage, BTreeInternalPage,
  * and BTreeRootPtrPage. The format of these pages is described in their constructors.
  * 
- * @see simpledb.BTreeLeafPage#BTreeLeafPage
- * @see simpledb.BTreeInternalPage#BTreeInternalPage
+ * @see BTreeLeafPage#BTreeLeafPage
+ * @see BTreeInternalPage#BTreeInternalPage
  * @see simpledb.BTreeHeaderPage#BTreeHeaderPage
  * @see simpledb.BTreeRootPtrPage#BTreeRootPtrPage
  * @author Becca Taft
@@ -192,7 +212,7 @@ public class BTreeFile implements DbFile {
 	 * 
 	 */
 	private BTreeLeafPage findLeafPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreePageId pid, Permissions perm,
-			Field f) 
+									   Field f)
 					throws DbException, TransactionAbortedException {
 		// some code goes here
         return null;
@@ -237,7 +257,7 @@ public class BTreeFile implements DbFile {
 	 * @throws IOException
 	 * @throws TransactionAbortedException
 	 */
-	protected BTreeLeafPage splitLeafPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreeLeafPage page, Field field) 
+	public BTreeLeafPage splitLeafPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreeLeafPage page, Field field)
 			throws DbException, IOException, TransactionAbortedException {
 		// some code goes here
         //
@@ -273,7 +293,7 @@ public class BTreeFile implements DbFile {
 	 * @throws IOException
 	 * @throws TransactionAbortedException
 	 */
-	protected BTreeInternalPage splitInternalPage(TransactionId tid, HashMap<PageId, Page> dirtypages, 
+	public BTreeInternalPage splitInternalPage(TransactionId tid, HashMap<PageId, Page> dirtypages,
 			BTreeInternalPage page, Field field) 
 					throws DbException, IOException, TransactionAbortedException {
 		// some code goes here
@@ -409,7 +429,7 @@ public class BTreeFile implements DbFile {
 	 * @throws IOException
 	 * @throws TransactionAbortedException
 	 */
-	Page getPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreePageId pid, Permissions perm)
+	public Page getPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreePageId pid, Permissions perm)
 			throws DbException, TransactionAbortedException {
 		if(dirtypages.containsKey(pid)) {
 			return dirtypages.get(pid);
@@ -574,7 +594,7 @@ public class BTreeFile implements DbFile {
 	 * 
 	 * @throws DbException
 	 */
-	protected void stealFromLeafPage(BTreeLeafPage page, BTreeLeafPage sibling,
+	public void stealFromLeafPage(BTreeLeafPage page, BTreeLeafPage sibling,
 			BTreeInternalPage parent, BTreeEntry entry, boolean isRightSibling) throws DbException {
 		// some code goes here
         //
@@ -653,7 +673,7 @@ public class BTreeFile implements DbFile {
 	 * @throws IOException
 	 * @throws TransactionAbortedException
 	 */
-	protected void stealFromLeftInternalPage(TransactionId tid, HashMap<PageId, Page> dirtypages, 
+	public void stealFromLeftInternalPage(TransactionId tid, HashMap<PageId, Page> dirtypages,
 			BTreeInternalPage page, BTreeInternalPage leftSibling, BTreeInternalPage parent,
 			BTreeEntry parentEntry) throws DbException, IOException, TransactionAbortedException {
 		// some code goes here
@@ -681,7 +701,7 @@ public class BTreeFile implements DbFile {
 	 * @throws IOException
 	 * @throws TransactionAbortedException
 	 */
-	protected void stealFromRightInternalPage(TransactionId tid, HashMap<PageId, Page> dirtypages, 
+	public void stealFromRightInternalPage(TransactionId tid, HashMap<PageId, Page> dirtypages,
 			BTreeInternalPage page, BTreeInternalPage rightSibling, BTreeInternalPage parent,
 			BTreeEntry parentEntry) throws DbException, IOException, TransactionAbortedException {
 		// some code goes here
@@ -709,7 +729,7 @@ public class BTreeFile implements DbFile {
 	 * @throws IOException
 	 * @throws TransactionAbortedException
 	 */
-	protected void mergeLeafPages(TransactionId tid, HashMap<PageId, Page> dirtypages, 
+	public void mergeLeafPages(TransactionId tid, HashMap<PageId, Page> dirtypages,
 			BTreeLeafPage leftPage, BTreeLeafPage rightPage, BTreeInternalPage parent, BTreeEntry parentEntry) 
 					throws DbException, IOException, TransactionAbortedException {
 
@@ -741,7 +761,7 @@ public class BTreeFile implements DbFile {
 	 * @throws IOException
 	 * @throws TransactionAbortedException
 	 */
-	protected void mergeInternalPages(TransactionId tid, HashMap<PageId, Page> dirtypages, 
+	public void mergeInternalPages(TransactionId tid, HashMap<PageId, Page> dirtypages,
 			BTreeInternalPage leftPage, BTreeInternalPage rightPage, BTreeInternalPage parent, BTreeEntry parentEntry) 
 					throws DbException, IOException, TransactionAbortedException {
 		
@@ -844,7 +864,7 @@ public class BTreeFile implements DbFile {
 	 * @throws IOException
 	 * @throws TransactionAbortedException
 	 */
-	BTreeRootPtrPage getRootPtrPage(TransactionId tid, HashMap<PageId, Page> dirtypages) throws DbException, IOException, TransactionAbortedException {
+	public BTreeRootPtrPage getRootPtrPage(TransactionId tid, HashMap<PageId, Page> dirtypages) throws DbException, IOException, TransactionAbortedException {
 		synchronized(this) {
 			if(f.length() == 0) {
 				// create the root pointer page and the root page
@@ -874,7 +894,7 @@ public class BTreeFile implements DbFile {
 	 * @throws IOException
 	 * @throws TransactionAbortedException
 	 */
-	protected int getEmptyPageNo(TransactionId tid, HashMap<PageId, Page> dirtypages) 
+	public int getEmptyPageNo(TransactionId tid, HashMap<PageId, Page> dirtypages)
 			throws DbException, IOException, TransactionAbortedException {
 		// get a read lock on the root pointer page and use it to locate the first header page
 		BTreeRootPtrPage rootPtr = getRootPtrPage(tid, dirtypages);
@@ -970,7 +990,7 @@ public class BTreeFile implements DbFile {
 	 * @throws IOException
 	 * @throws TransactionAbortedException
 	 */
-	protected void setEmptyPage(TransactionId tid, HashMap<PageId, Page> dirtypages, int emptyPageNo) 
+	public void setEmptyPage(TransactionId tid, HashMap<PageId, Page> dirtypages, int emptyPageNo)
 			throws DbException, IOException, TransactionAbortedException {
 
 		// if this is the last page in the file (and not the only page), just 

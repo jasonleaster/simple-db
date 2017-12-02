@@ -1,18 +1,19 @@
 package simpledb.field;
 
-import simpledb.Predicate;
 import simpledb.Type;
+import simpledb.operator.Predicate;
 
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /**
  * Instance of Field that stores a single integer.
  */
 public class IntField implements Field {
-    
-	private static final long serialVersionUID = 1L;
-	
-	private final int value;
+
+    private static final long serialVersionUID = 1L;
+
+    private final int value;
 
     public int getValue() {
         return value;
@@ -55,25 +56,25 @@ public class IntField implements Field {
         IntField iVal = (IntField) val;
 
         switch (op) {
-        case EQUALS:
-            return value == iVal.value;
-        case NOT_EQUALS:
-            return value != iVal.value;
+            case EQUALS:
+                return value == iVal.value;
+            case NOT_EQUALS:
+                return value != iVal.value;
 
-        case GREATER_THAN:
-            return value > iVal.value;
+            case GREATER_THAN:
+                return value > iVal.value;
 
-        case GREATER_THAN_OR_EQ:
-            return value >= iVal.value;
+            case GREATER_THAN_OR_EQ:
+                return value >= iVal.value;
 
-        case LESS_THAN:
-            return value < iVal.value;
+            case LESS_THAN:
+                return value < iVal.value;
 
-        case LESS_THAN_OR_EQ:
-            return value <= iVal.value;
+            case LESS_THAN_OR_EQ:
+                return value <= iVal.value;
 
-    case LIKE:
-        return value == iVal.value;
+            case LIKE:
+                return value == iVal.value;
         }
 
         return false;
@@ -81,9 +82,10 @@ public class IntField implements Field {
 
     /**
      * Return the Type of this field.
+     *
      * @return Type.INT_TYPE
      */
-	public Type getType() {
-		return Type.INT_TYPE;
-	}
+    public Type getType() {
+        return Type.INT_TYPE;
+    }
 }

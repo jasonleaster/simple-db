@@ -1,5 +1,7 @@
 package simpledb;
 
+import simpledb.operator.Predicate;
+
 /** A LogicalJoinNode represens the state needed of a join of two
  * tables in a LogicalQueryPlan */
 public class LogicalJoinNode {

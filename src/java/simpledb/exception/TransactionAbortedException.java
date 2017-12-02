@@ -1,4 +1,4 @@
-package simpledb;
+package simpledb.exception;
 
 import java.lang.Exception;
 

@@ -1,4 +1,9 @@
-package simpledb;
+package simpledb.operator;
+
+import simpledb.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
 
 import java.util.NoSuchElementException;
 
@@ -10,6 +15,10 @@ import java.util.NoSuchElementException;
 public abstract class Operator implements OpIterator {
 
     private static final long serialVersionUID = 1L;
+
+    private Tuple next = null;
+    private boolean open = false;
+    private int estimatedCardinality = 0;
 
     public boolean hasNext() throws DbException, TransactionAbortedException {
         if (!this.open)
@@ -33,16 +42,7 @@ public abstract class Operator implements OpIterator {
         return result;
     }
 
-    /**
-     * Returns the next Tuple in the iterator, or null if the iteration is
-     * finished. Operator uses this method to implement both <code>next</code>
-     * and <code>hasNext</code>.
-     * 
-     * @return the next Tuple in the iterator, or null if the iteration is
-     *         finished.
-     */
-    protected abstract Tuple fetchNext() throws DbException,
-            TransactionAbortedException;
+
 
     /**
      * Closes this iterator. If overridden by a subclass, they should call
@@ -54,38 +54,9 @@ public abstract class Operator implements OpIterator {
         this.open = false;
     }
 
-    private Tuple next = null;
-    private boolean open = false;
-    private int estimatedCardinality = 0;
-
     public void open() throws DbException, TransactionAbortedException {
         this.open = true;
     }
-
-    /**
-     * @return return the children DbIterators of this operator. If there is
-     *         only one child, return an array of only one element. For join
-     *         operators, the order of the children is not important. But they
-     *         should be consistent among multiple calls.
-     * */
-    public abstract OpIterator[] getChildren();
-
-    /**
-     * Set the children(child) of this operator. If the operator has only one
-     * child, children[0] should be used. If the operator is a join, children[0]
-     * and children[1] should be used.
-     * 
-     * 
-     * @param children
-     *            the DbIterators which are to be set as the children(child) of
-     *            this operator
-     * */
-    public abstract void setChildren(OpIterator[] children);
-
-    /**
-     * @return return the TupleDesc of the output tuples of this operator
-     * */
-    public abstract TupleDesc getTupleDesc();
 
     /**
      * @return The estimated cardinality of this operator. Will only be used in
@@ -100,8 +71,46 @@ public abstract class Operator implements OpIterator {
      *            The estimated cardinality of this operator Will only be used
      *            in lab7
      * */
-    protected void setEstimatedCardinality(int card) {
+    public void setEstimatedCardinality(int card) {
         this.estimatedCardinality = card;
     }
+
+
+
+    /**
+     * @return return the children DbIterators of this operator. If there is
+     *         only one child, return an array of only one element. For join
+     *         operators, the order of the children is not important. But they
+     *         should be consistent among multiple calls.
+     * */
+    public abstract OpIterator[] getChildren();
+
+    /**
+     * Set the children(child) of this operator. If the operator has only one
+     * child, children[0] should be used. If the operator is a join, children[0]
+     * and children[1] should be used.
+     *
+     *
+     * @param children
+     *            the DbIterators which are to be set as the children(child) of
+     *            this operator
+     * */
+    public abstract void setChildren(OpIterator[] children);
+
+    /**
+     * @return return the TupleDesc of the output tuples of this operator
+     * */
+    public abstract TupleDesc getTupleDesc();
+
+    /**
+     * Returns the next Tuple in the iterator, or null if the iteration is
+     * finished. Operator uses this method to implement both <code>next</code>
+     * and <code>hasNext</code>.
+     *
+     * @return the next Tuple in the iterator, or null if the iteration is
+     *         finished.
+     */
+    protected abstract Tuple fetchNext() throws DbException,
+            TransactionAbortedException;
 
 }

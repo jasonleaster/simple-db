@@ -1,4 +1,15 @@
-package simpledb;
+package simpledb.page;
+
+import simpledb.page.pageid.BTreePageId;
+import simpledb.BTreeRootPtrPage;
+import simpledb.BufferPool;
+import simpledb.Catalog;
+import simpledb.Database;
+import simpledb.DbException;
+import simpledb.TransactionId;
+import simpledb.Type;
+import simpledb.dbfile.BTreeFile;
+import simpledb.tuple.TupleDesc;
 
 import java.io.*;
 
@@ -14,7 +25,7 @@ public abstract class BTreePage implements Page {
 	protected volatile boolean dirty = false;
 	protected volatile TransactionId dirtier = null;
 
-	protected final static int INDEX_SIZE = Type.INT_TYPE.getLen();
+	public final static int INDEX_SIZE = Type.INT_TYPE.getLen();
 
 	protected final BTreePageId pid;
 	protected final TupleDesc td;

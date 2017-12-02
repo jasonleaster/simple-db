@@ -1,6 +1,6 @@
 package simpledb.field;
 
-import simpledb.Predicate;
+import simpledb.operator.Predicate;
 import simpledb.Type;
 
 import java.io.*;

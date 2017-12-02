@@ -101,17 +101,32 @@ public class HeapFile implements DbFile {
         final byte[] pageBuffer = new byte[pageSize];
 
         HeapPage heapPage = null;
+        FileInputStream fis = null;
         try {
-            FileInputStream fis = new FileInputStream(diskFile);
+            fis = new FileInputStream(diskFile);
+            if (offset > 0) {
+                fis.skip(offset);
+            }
+
             if (fis.available() > 0) {
-                if (fis.read(pageBuffer, offset, pageSize) <= 0) {
+                if (fis.read(pageBuffer, 0, pageSize) <= 0) {
                     System.out.println("Failed to read page:" + pageId.getPageNumber());
                 } else {
                     heapPage = new HeapPage((HeapPageId) pageId, pageBuffer);
                 }
             }
         } catch (IOException e) {
-
+            System.out.println("HeapFile##readPage: " +
+                    "Exception happened when database trying to get page from disk");
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.out.println("Failed to close this file stream");
+                }
+            }
         }
 
         return heapPage;

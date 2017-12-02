@@ -1,5 +1,11 @@
 package simpledb;
 
+import simpledb.dbfile.BTreeFile;
+import simpledb.field.Field;
+import simpledb.field.IntField;
+import simpledb.page.Page;
+import simpledb.page.pageid.BTreePageId;
+
 import java.io.*;
 
 /**

@@ -1,4 +1,8 @@
-package simpledb;
+package simpledb.aggregator;
+
+import simpledb.operator.OpIterator;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleIterator;
 
 import java.io.Serializable;
 
@@ -78,7 +82,7 @@ public interface Aggregator extends Serializable {
 
     /**
      * Create a OpIterator over group aggregate results.
-     * @see simpledb.TupleIterator for a possible helper
+     * @see TupleIterator for a possible helper
      */
     public OpIterator iterator();
     

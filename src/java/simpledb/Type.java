@@ -1,5 +1,9 @@
 package simpledb;
 
+import simpledb.field.Field;
+import simpledb.field.IntField;
+import simpledb.field.StringField;
+
 import java.text.ParseException;
 import java.io.*;
 

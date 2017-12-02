@@ -1,4 +1,10 @@
-package simpledb;
+package simpledb.operator;
+
+import simpledb.DbException;
+import simpledb.field.Field;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
 
 import java.util.*;
 

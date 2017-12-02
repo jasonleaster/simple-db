@@ -1,4 +1,9 @@
-package simpledb;
+package simpledb.aggregator;
+
+import simpledb.Type;
+import simpledb.aggregator.Aggregator;
+import simpledb.operator.OpIterator;
+import simpledb.tuple.Tuple;
 
 /**
  * Knows how to compute some aggregate over a set of IntFields.

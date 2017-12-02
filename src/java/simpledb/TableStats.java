@@ -1,5 +1,8 @@
 package simpledb;
 
+import simpledb.field.Field;
+import simpledb.operator.Predicate;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;

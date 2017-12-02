@@ -1,4 +1,6 @@
-package simpledb;
+package simpledb.tuple;
+
+import simpledb.operator.OpIterator;
 
 import java.util.*;
 
@@ -6,9 +8,7 @@ import java.util.*;
  * Implements a OpIterator by wrapping an Iterable<Tuple>.
  */
 public class TupleIterator implements OpIterator {
-    /**
-	 * 
-	 */
+
     private static final long serialVersionUID = 1L;
     Iterator<Tuple> i = null;
     TupleDesc td = null;

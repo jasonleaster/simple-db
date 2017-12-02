@@ -1,4 +1,12 @@
-package simpledb;
+package simpledb.operator;
+
+import simpledb.BufferPool;
+import simpledb.Database;
+import simpledb.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.TransactionId;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
 
 /**
  * Inserts tuples read from the child operator into the tableId specified in the

@@ -1,5 +1,7 @@
 package simpledb;
 
+import simpledb.operator.Predicate;
+
 /** A class to represent a fixed-width histogram over a single integer-based field.
  */
 public class IntHistogram {
