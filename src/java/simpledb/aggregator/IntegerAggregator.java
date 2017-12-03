@@ -92,6 +92,10 @@ public class IntegerAggregator implements Aggregator {
         Field curGrpByField = tuple.getField(this.gbfield);
         IntField curAgField = (IntField) tuple.getField(this.afield);
 
+        if (curGrpByField.getType() != this.gbfieldtype) {
+            return;
+        }
+
         if (totalSum.containsKey(curGrpByField)) {
             totalSum.put(curGrpByField, totalSum.get(curGrpByField) + curAgField.getValue());
         } else {
@@ -106,11 +110,13 @@ public class IntegerAggregator implements Aggregator {
 
         IntField after = null;
         if (!this.results.containsKey(curGrpByField)) {
-            this.results.put(curGrpByField, tuple);
             after = curAgField;
+            if (what == Op.COUNT) {
+                after = new IntField(1);
+            }
         } else {
             Tuple preResult = this.results.get(curGrpByField);
-            IntField preAgField = (IntField) preResult.getField(this.afield);
+            IntField preAgField = (IntField) preResult.getField(1);
             switch (what){
                 case MAX:
                     after = preAgField.getValue() < curAgField.getValue() ? curAgField : preAgField;
