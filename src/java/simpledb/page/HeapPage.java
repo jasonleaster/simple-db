@@ -40,6 +40,9 @@ public class HeapPage implements Page {
     final Tuple tuples[];
     final int numSlots;
 
+    private boolean isDirty;
+    private TransactionId dirtyTransaction;
+
     byte[] oldData;
     private final Byte oldDataLock = new Byte((byte) 0);
 
@@ -62,6 +65,7 @@ public class HeapPage implements Page {
      */
     public HeapPage(HeapPageId id, byte[] data) throws IOException {
         this.pageId = id;
+        this.isDirty = false;
         this.tupleDesc = Database.getCatalog().getTupleDesc(id.getTableId());
         this.numSlots = getNumTuples();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
@@ -94,7 +98,6 @@ public class HeapPage implements Page {
         final int byteSize = 8; // 8 bit
         final int slotSize = 1; // 1 bit
         return (BufferPool.getPageSize() * byteSize) / (tupleDesc.getSize() * byteSize + slotSize);
-
     }
 
     /**
@@ -265,26 +268,58 @@ public class HeapPage implements Page {
      * Delete the specified tuple from the page; the corresponding header bit should be updated to reflect
      * that it is no longer stored on any page.
      *
-     * @param t The tuple to delete
+     * @param tuple The tuple to delete
      * @throws DbException if this tuple is not on this page, or tuple slot is
      *                     already empty.
      */
-    public void deleteTuple(Tuple t) throws DbException {
+    public void deleteTuple(Tuple tuple) throws DbException {
         // some code goes here
         // not necessary for lab1
+        if (tuple == null) {
+            return;
+        }
+
+        boolean findTarget = false;
+        for (int i = 0; i < this.getNumTuples(); i++) {
+            if (tuple.equals(this.tuples[i])) {
+                markSlotUsed(i, false);
+                markDirty(true, new TransactionId());
+                this.tuples[i] = null;
+                findTarget = true;
+            }
+        }
+        if (!findTarget) {
+            throw new DbException("this tuple is not on this page," +
+                    " or tuple slot is already empty.");
+        }
     }
 
     /**
      * Adds the specified tuple to the page;  the tuple should be updated to reflect
      * that it is now stored on this page.
      *
-     * @param t The tuple to add.
+     * @param tuple The tuple to add.
      * @throws DbException if the page is full (no empty slots) or tupledesc
      *                     is mismatch.
      */
-    public void insertTuple(Tuple t) throws DbException {
+    public void insertTuple(Tuple tuple) throws DbException {
         // some code goes here
         // not necessary for lab1
+        if (!this.tupleDesc.equals(tuple.getTupleDesc())) {
+            return;
+        }
+
+        for(int i = 0; i < this.getNumTuples(); i++) {
+            if (!this.isSlotUsed(i)) {
+                markSlotUsed(i, true);
+                markDirty(true, new TransactionId());
+                tuple.setRecordId(new RecordId(this.pageId, this.getNumTuples() - this.getNumEmptySlots()));
+                this.tuples[i] = tuple;
+                return;
+            }
+        }
+
+        throw new DbException("This page is full. There have no more empty slots");
     }
 
     /**
@@ -294,15 +329,23 @@ public class HeapPage implements Page {
     public void markDirty(boolean dirty, TransactionId tid) {
         // some code goes here
         // not necessary for lab1
+        this.isDirty = dirty;
+        if (dirty) {
+            this.dirtyTransaction = tid;
+        } else {
+            this.dirtyTransaction = null;
+        }
+
     }
 
     /**
-     * Returns the tid of the transaction that last dirtied this page, or null if the page is not dirty
+     * Returns the tid of the transaction that last dirtied this page,
+     * or null if the page is not dirty
      */
     public TransactionId isDirty() {
         // some code goes here
         // Not necessary for lab1
-        return null;
+        return this.dirtyTransaction;
     }
 
     /**
@@ -338,6 +381,13 @@ public class HeapPage implements Page {
     private void markSlotUsed(int i, boolean value) {
         // some code goes here
         // not necessary for lab1
+        final int index = i / 8;
+        final int offset = (i % 8);
+        if (value) {
+            header[index] = (byte) (header[index] | (1 << offset));
+        } else {
+            header[index] = (byte) (header[index] & ~(1 << offset));
+        }
     }
 
     /**
