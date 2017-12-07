@@ -13,10 +13,12 @@ import simpledb.page.pageid.PageId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -33,7 +35,6 @@ import java.util.List;
  */
 public class HeapFile implements DbFile {
 
-    private long pageNo;
     private final File diskFile;
     private final String tableName;
     private final TupleDesc tupleDesc;
@@ -53,10 +54,6 @@ public class HeapFile implements DbFile {
         this.diskFile = diskFile;
         this.tableName = diskFile.getName();
         this.tableId = diskFile.getAbsoluteFile().hashCode();
-
-        this.pageNo =
-                (diskFile.length() - 1 + BufferPool.getPageSize())
-                        / BufferPool.getPageSize();
     }
 
     /**
@@ -142,10 +139,10 @@ public class HeapFile implements DbFile {
         int offset = pageNo * BufferPool.getPageSize();
         byte[] pageData = page.getPageData();
 
-        FileOutputStream fos = new FileOutputStream(this.diskFile);
-        fos.getChannel().position(offset);
-        fos.write(pageData);
-        fos.close();
+        RandomAccessFile raf = new RandomAccessFile(this.diskFile, "rw");
+        raf.seek(offset);
+        raf.write(pageData);
+        raf.close();
 
         page.markDirty(false, new TransactionId());
     }
@@ -155,7 +152,9 @@ public class HeapFile implements DbFile {
      */
     public int numPages() {
         // 这里的接口建议改成long类型
-        return (int) pageNo;
+        long currentPageNo = (diskFile.length() - 1 + BufferPool.getPageSize())
+                / BufferPool.getPageSize();
+        return (int) currentPageNo;
     }
 
     // TODO 我不是很明白为什么这里返回的页面是个list，而不是单个page
@@ -169,7 +168,7 @@ public class HeapFile implements DbFile {
          * HeapFile.deleteTuple() methods access pages using the BufferPool.getPage() method
          */
         ArrayList<Page> pagesModified = new ArrayList<>();
-        for (int i = 0; i < this.pageNo; i++) {
+        for (int i = 0; i < this.numPages(); i++) {
              PageId pageId = new HeapPageId(this.tableId, i);
              HeapPage page = (HeapPage) Database.getBufferPool()
                      .getPage(tid, pageId, Permissions.READ_WRITE);
@@ -183,13 +182,12 @@ public class HeapFile implements DbFile {
          }
 
          // No more space in existed pages
-        HeapPageId pageId = new HeapPageId(this.tableId, (int)this.pageNo);
+        HeapPageId pageId = new HeapPageId(this.tableId, this.numPages());
         byte[] emptyPage = new byte[BufferPool.getPageSize()];
         HeapPage newPage = new HeapPage(pageId, emptyPage);
         newPage.markDirty(true, tid);
         newPage.insertTuple(tuple);
         this.writePage(newPage);
-        this.pageNo++;
 
         pagesModified.add(newPage);
 
@@ -202,10 +200,14 @@ public class HeapFile implements DbFile {
         // some code goes here
         // not necessary for lab1
         ArrayList<Page> pagesModified = new ArrayList<>();
-        for (int i = 0; i < this.pageNo; i++) {
+        for (int i = 0; i < this.numPages(); i++) {
             PageId pageId = new HeapPageId(this.tableId, i);
             HeapPage page = (HeapPage) Database.getBufferPool()
                     .getPage(tid, pageId, Permissions.READ_WRITE);
+
+            if (page == null){
+                continue;
+            }
 
             boolean deleteFailed = false;
             try {
@@ -224,17 +226,22 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
         // some code goes here
-        return new HeapFileIterator();
+        return new HeapFileIterator(this.numPages());
     }
 
     private class HeapFileIterator extends AbstractDbFileIterator {
 
+        public HeapFileIterator(int pageNo) {
+            this.pageNo = pageNo;
+        }
+
+        private int pageNo;
         private int iterIndex = 0;
         private List<Iterator<Tuple>> iterators = new ArrayList<>();
 
         @Override
         public void open() throws DbException, TransactionAbortedException {
-            for (int i = 0; i < pageNo; i++) {
+            for (int i = 0; i < this.pageNo; i++) {
                 TransactionId transactionId = new TransactionId();
                 PageId pageId = new HeapPageId(tableId, i);
                 Page page = Database.getBufferPool().getPage(transactionId, pageId, Permissions.READ_WRITE);

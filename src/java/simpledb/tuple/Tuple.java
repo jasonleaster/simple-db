@@ -2,7 +2,6 @@ package simpledb.tuple;
 
 import simpledb.Type;
 import simpledb.field.Field;
-import simpledb.RecordId;
 import simpledb.field.IntField;
 import simpledb.field.StringField;
 
@@ -143,5 +142,26 @@ public class Tuple implements Serializable {
                 fields.add(new StringField("", fieldType.getLen()));
             }
         }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof  Tuple))
+        {
+            return false;
+        }
+
+        Tuple other = (Tuple) obj;
+        if (this.recordId.equals(other.getRecordId()) &&
+                this.tupleDesc.equals(other.getTupleDesc())) {
+            for (int i = 0; i < this.fields.size(); i++) {
+                if (!this.fields.get(i).equals(other.getField(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        return false;
     }
 }

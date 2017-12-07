@@ -1,4 +1,4 @@
-package simpledb;
+package simpledb.tuple;
 
 import simpledb.page.pageid.PageId;
 

@@ -1,7 +1,9 @@
 package simpledb.page;
 
+import simpledb.DbException;
 import simpledb.page.pageid.PageId;
 import simpledb.TransactionId;
+import simpledb.tuple.Tuple;
 
 /**
  * Page is the interface used to represent pages that are resident in the
