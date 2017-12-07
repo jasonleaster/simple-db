@@ -146,6 +146,8 @@ public class HeapFile implements DbFile {
         fos.getChannel().position(offset);
         fos.write(pageData);
         fos.close();
+
+        page.markDirty(false, new TransactionId());
     }
 
     /**
@@ -205,9 +207,16 @@ public class HeapFile implements DbFile {
             HeapPage page = (HeapPage) Database.getBufferPool()
                     .getPage(tid, pageId, Permissions.READ_WRITE);
 
-            page.deleteTuple(t);
-            page.markDirty(true, tid);
-            pagesModified.add(page);
+            boolean deleteFailed = false;
+            try {
+                page.deleteTuple(t);
+            } catch (DbException e) {
+                deleteFailed = true;
+            }
+            if (!deleteFailed) {
+                page.markDirty(true, tid);
+                pagesModified.add(page);
+            }
         }
         return pagesModified;
     }
