@@ -2,9 +2,9 @@ package simpledb.dbfile;
 
 import simpledb.BufferPool;
 import simpledb.Database;
-import simpledb.DbException;
+import simpledb.exception.DbException;
 import simpledb.Permissions;
-import simpledb.TransactionId;
+import simpledb.transaction.TransactionId;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.page.HeapPage;
 import simpledb.page.Page;
@@ -13,10 +13,8 @@ import simpledb.page.pageid.PageId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -237,36 +235,41 @@ public class HeapFile implements DbFile {
 
         private int pageNo;
         private int iterIndex = 0;
-        private List<Iterator<Tuple>> iterators = new ArrayList<>();
+        private Iterator<Tuple> iterator;
 
         @Override
         public void open() throws DbException, TransactionAbortedException {
-            for (int i = 0; i < this.pageNo; i++) {
-                TransactionId transactionId = new TransactionId();
-                PageId pageId = new HeapPageId(tableId, i);
-                Page page = Database.getBufferPool().getPage(transactionId, pageId, Permissions.READ_WRITE);
-
-                iterators.add(((HeapPage) page).iterator());
+            iterIndex = 0;
+            iterator = this.getHeapPageIterator(iterIndex);
+            if (iterator == null) {
+                throw new DbException("iterator is null");
             }
+        }
+
+        private Iterator<Tuple> getHeapPageIterator(int pageNo)
+                throws DbException, TransactionAbortedException {
+            TransactionId transactionId = new TransactionId();
+            PageId pageId = new HeapPageId(tableId, pageNo);
+            Page page = Database.getBufferPool().getPage(transactionId, pageId, Permissions.READ_WRITE);
+            return ((HeapPage) page).iterator();
         }
 
         @Override
         protected Tuple readNext() throws DbException, TransactionAbortedException {
-            if (iterators.size() == 0) {
+            if (iterator == null || iterIndex >= pageNo) {
                 return null;
             }
 
-            Iterator<Tuple> iterator = iterators.get(iterIndex);
             while (!iterator.hasNext()) {
                 iterIndex++;
-                if (iterIndex < iterators.size()) {
-                    iterator = iterators.get(iterIndex);
+                if (iterIndex < pageNo) {
+                    iterator = this.getHeapPageIterator(iterIndex);
                 } else {
                     break;
                 }
             }
 
-            if (iterIndex == iterators.size()) {
+            if (iterIndex == pageNo) {
                 return null;
             } else {
                 return iterator.next();
@@ -275,14 +278,14 @@ public class HeapFile implements DbFile {
 
         @Override
         public void rewind() throws DbException, TransactionAbortedException {
-            iterators.clear();
+            close();
             open();
         }
 
         @Override
         public void close() {
             super.close();
-            iterators.clear();
+            this.iterIndex = pageNo;
         }
     }
 }

@@ -3,9 +3,9 @@ package simpledb.page;
 import simpledb.BufferPool;
 import simpledb.Catalog;
 import simpledb.Database;
-import simpledb.DbException;
+import simpledb.exception.DbException;
 import simpledb.tuple.RecordId;
-import simpledb.TransactionId;
+import simpledb.transaction.TransactionId;
 import simpledb.dbfile.HeapFile;
 import simpledb.field.Field;
 import simpledb.page.pageid.HeapPageId;
@@ -402,6 +402,34 @@ public class HeapPage implements Page {
             }
         }
         return tupleList.iterator();
+        //return new TupleIterator();
+    }
+
+    private class TupleIterator implements Iterator<Tuple> {
+        int index = 0;
+        Tuple nextTuple;
+
+        @Override
+        public boolean hasNext() {
+            if (index > tuples.length - 1) {
+                return false;
+            }
+
+            nextTuple = tuples[index++];
+            while (nextTuple == null && index < tuples.length - 1) {
+                nextTuple = tuples[index++];
+            }
+            if (nextTuple != null) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public Tuple next() {
+            return nextTuple;
+        }
     }
 
 }

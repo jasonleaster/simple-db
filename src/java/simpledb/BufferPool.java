@@ -1,9 +1,11 @@
 package simpledb;
 
 import simpledb.dbfile.DbFile;
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.page.Page;
 import simpledb.page.pageid.PageId;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 
 import java.io.IOException;
@@ -91,6 +93,9 @@ public class BufferPool {
             DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
             page = dbFile.readPage(pid);
             if (page != null) {
+                if (bufferPool.size() >= this.numPages) {
+                    this.evictPage();
+                }
                 bufferPool.put(pid, page);
             }
 
@@ -206,11 +211,21 @@ public class BufferPool {
      * Flush all dirty pages to disk.
      * NB: Be careful using this routine -- it writes dirty data to disk so will
      * break simpledb if running in NO STEAL mode.
+     *
+     * Notice that BufferPool asks you to implement a flushAllPages() method.
+     * This is not something you would ever need in a real implementation of a
+     * buffer pool. However, we need this method for testing purposes.
+     * You should never call this method from any real code.
      */
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for lab1
-
+        for (Map.Entry<PageId, Page> group : bufferPool.entrySet()) {
+            Page page = group.getValue();
+            if (page.isDirty() != null) {
+                this.flushPage(group.getKey());
+            }
+        }
     }
 
     /**
@@ -218,6 +233,9 @@ public class BufferPool {
      * Needed by the recovery manager to ensure that the
      * buffer pool doesn't keep a rolled back page in its
      * cache.
+     *
+     * You should also implement discardPage() to
+     * remove a page from the buffer pool without flushing it to disk.
      * <p>
      * Also used by B+ tree files to ensure that deleted pages
      * are removed from the cache so they can be reused safely
@@ -225,6 +243,11 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        if (pid == null) {
+            return;
+        }
+
+        bufferPool.remove(pid);
     }
 
     /**
@@ -235,6 +258,12 @@ public class BufferPool {
     private synchronized void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+        try {
+            Page page = this.getPage(new TransactionId(), pid, Permissions.READ_WRITE);
+            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
+        } catch (TransactionAbortedException | DbException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -243,6 +272,7 @@ public class BufferPool {
     public synchronized void flushPages(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
+
     }
 
     /**
@@ -252,6 +282,20 @@ public class BufferPool {
     private synchronized void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+
+        for (Map.Entry<PageId, Page> group : bufferPool.entrySet()) {
+            Page page = group.getValue();
+            if (page.isDirty() != null) {
+                try {
+                    this.flushPage(group.getKey());
+                    page.markDirty(false, new TransactionId());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            bufferPool.remove(group.getKey());
+            return;
+        }
     }
 
 }

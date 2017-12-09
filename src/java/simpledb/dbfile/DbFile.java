@@ -3,11 +3,11 @@ package simpledb.dbfile;
 
 import simpledb.BufferPool;
 import simpledb.Catalog;
-import simpledb.DbException;
+import simpledb.exception.DbException;
 import simpledb.page.Page;
 import simpledb.page.pageid.PageId;
 import simpledb.exception.TransactionAbortedException;
-import simpledb.TransactionId;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
@@ -32,7 +32,8 @@ public interface DbFile {
     /**
      * Push the specified page to disk.
      *
-     * @param p The page to write.  page.getId().pageno() specifies the offset into the file where the page should be written.
+     * @param p The page to write.  page.getId().pageno() specifies the offset
+     *          into the file where the page should be written.
      * @throws IOException if the write fails
      *
      */
