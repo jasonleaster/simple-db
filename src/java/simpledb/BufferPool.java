@@ -5,6 +5,7 @@ import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.page.Page;
 import simpledb.page.pageid.PageId;
+import simpledb.transaction.Transaction;
 import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 
@@ -42,7 +43,10 @@ public class BufferPool {
 
     private final int numPages;
 
-    private Map<PageId, Page> bufferPool = new ConcurrentHashMap<>();
+    private final Map<PageId, Page> bufferPool = new ConcurrentHashMap<>();
+
+    private final Map<PageId, List<TransactionId>> sharedLockManager = new ConcurrentHashMap<>();
+    private final Map<PageId, TransactionId> exclusiveLockManager = new ConcurrentHashMap<>();
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -98,9 +102,75 @@ public class BufferPool {
                 }
                 bufferPool.put(pid, page);
             }
+        }
 
+        // 设置该锁对应的权限
+        if (perm == Permissions.READ_ONLY) {
+            while (true) {
+                synchronized (exclusiveLockManager) {
+                    TransactionId exclusiveLock = exclusiveLockManager.get(pid);
+                    boolean haveExclusiveLock = exclusiveLock!= null;
+                    // 已有排它锁受到阻塞
+                    if (haveExclusiveLock && !exclusiveLock.equals(tid)) {
+                        Thread.yield();
+                    } else {
+                        // 设置共享锁
+                        List<TransactionId> sharedTransactions = sharedLockManager.computeIfAbsent(pid, k -> new ArrayList<>());
+                        // 避免重复添加共享锁
+                        if (!sharedTransactions.contains(tid)) {
+                            sharedTransactions.add(tid);
+                        }
+                        break;
+                    }
+                }
+            }
+        } else {
+            while (true) {
+                synchronized (exclusiveLockManager) {
+                    List<TransactionId> sharedTransactions = sharedLockManager.get(pid);
+                    boolean haveSharedLock = sharedTransactions != null && sharedTransactions.size() > 0;
+                    // 已有共享锁受到阻塞
+                    if (haveSharedLock && !sharedTransactions.contains(tid)) {
+                        Thread.yield();
+                    } else {
+                        // 考虑锁升级的情况
+                        if (haveSharedLock && sharedTransactions.contains(tid)) {
+                            sharedTransactions.remove(tid);
+                        }
+                        TransactionId oldTid = exclusiveLockManager.get(pid);
+                        boolean haveExclusiveLock = oldTid != null;
+                        if (haveExclusiveLock && !oldTid.equals(tid)) {
+                            Thread.yield();
+                        } else {
+                            // 设置排它锁
+                            exclusiveLockManager.put(pid, tid);
+                            break;
+                        }
+                    }
+                }
+            }
         }
         return page;
+    }
+
+    /**
+     * Return true if the specified transaction has a lock on the specified page
+     */
+    public boolean holdsLock(TransactionId tid, PageId p) {
+        // some code goes here
+        // not necessary for lab1|lab2
+        // 首先检查排它锁
+        if (this.exclusiveLockManager.get(p).equals(tid)) {
+            return true;
+        } else {
+            // 查看是否有共享锁
+            List<TransactionId> sharedTransactions = this.sharedLockManager.get(p);
+            if (sharedTransactions != null && sharedTransactions.contains(tid)) {
+                return true;
+            }
+
+            return false;
+        }
     }
 
     /**
@@ -115,6 +185,17 @@ public class BufferPool {
     public void releasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for lab1|lab2
+        if (pid == null || tid == null) {
+            return;
+        }
+
+        synchronized (exclusiveLockManager) {
+            this.exclusiveLockManager.remove(pid);
+            List<TransactionId> sharedTransactions = this.sharedLockManager.get(pid);
+            if (sharedTransactions != null) {
+                sharedTransactions.remove(tid);
+            }
+        }
     }
 
     /**
@@ -125,15 +206,7 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
-    }
-
-    /**
-     * Return true if the specified transaction has a lock on the specified page
-     */
-    public boolean holdsLock(TransactionId tid, PageId p) {
-        // some code goes here
-        // not necessary for lab1|lab2
-        return false;
+        this.transactionComplete(tid, true);
     }
 
     /**
@@ -147,6 +220,28 @@ public class BufferPool {
             throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
+        synchronized (exclusiveLockManager) {
+            if (commit) {
+                for (Map.Entry<PageId, TransactionId> group : exclusiveLockManager.entrySet()) {
+                    if (group.getValue() != null && group.getValue().equals(tid)) {
+                        exclusiveLockManager.remove(group.getKey());
+                    }
+                }
+
+                for (Map.Entry<PageId, List<TransactionId>> group : sharedLockManager.entrySet()) {
+                    if (group.getValue() != null && group.getValue().size() > 0) {
+                        List<TransactionId> sharedTids = group.getValue();
+                        for (TransactionId sharedTid : sharedTids) {
+                            if (sharedTid.equals(tid)) {
+                                sharedTids.remove(tid);
+                            }
+                        }
+                    }
+                }
+            } else {
+                // TODO abort
+            }
+        }
     }
 
     /**
@@ -169,7 +264,7 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         ArrayList<Page> dirtyPages = Database.getCatalog().getDatabaseFile(tableId)
-                                    .insertTuple(tid, t);
+                .insertTuple(tid, t);
 
         for (Page dirtyPage : dirtyPages) {
             dirtyPage.markDirty(true, tid);
@@ -211,7 +306,7 @@ public class BufferPool {
      * Flush all dirty pages to disk.
      * NB: Be careful using this routine -- it writes dirty data to disk so will
      * break simpledb if running in NO STEAL mode.
-     *
+     * <p>
      * Notice that BufferPool asks you to implement a flushAllPages() method.
      * This is not something you would ever need in a real implementation of a
      * buffer pool. However, we need this method for testing purposes.
@@ -233,7 +328,7 @@ public class BufferPool {
      * Needed by the recovery manager to ensure that the
      * buffer pool doesn't keep a rolled back page in its
      * cache.
-     *
+     * <p>
      * You should also implement discardPage() to
      * remove a page from the buffer pool without flushing it to disk.
      * <p>
@@ -258,12 +353,16 @@ public class BufferPool {
     private synchronized void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
-        try {
-            Page page = this.getPage(new TransactionId(), pid, Permissions.READ_WRITE);
-            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
-        } catch (TransactionAbortedException | DbException e) {
-            e.printStackTrace();
-        }
+        // TODO
+//        try {
+//            Transaction flushPageAction = new Transaction();
+//            flushPageAction.start();
+//            Page page = this.getPage(flushPageAction.getId() , pid, Permissions.READ_ONLY);
+//            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
+//            flushPageAction.commit();
+//        } catch (TransactionAbortedException | DbException e) {
+//            e.printStackTrace();
+//        }
     }
 
     /**

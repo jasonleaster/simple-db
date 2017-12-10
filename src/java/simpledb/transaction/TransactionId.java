@@ -1,4 +1,4 @@
-package simpledb;
+package simpledb.transaction;
 
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;

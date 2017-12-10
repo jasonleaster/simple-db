@@ -1,4 +1,6 @@
-package simpledb;
+package simpledb.transaction;
+
+import simpledb.Database;
 
 import java.io.*;
 
