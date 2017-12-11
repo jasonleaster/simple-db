@@ -5,7 +5,6 @@ import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.page.Page;
 import simpledb.page.pageid.PageId;
-import simpledb.transaction.Transaction;
 import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 
@@ -109,7 +108,7 @@ public class BufferPool {
             while (true) {
                 synchronized (exclusiveLockManager) {
                     TransactionId exclusiveLock = exclusiveLockManager.get(pid);
-                    boolean haveExclusiveLock = exclusiveLock!= null;
+                    boolean haveExclusiveLock = exclusiveLock != null;
                     // 已有排它锁受到阻塞
                     if (haveExclusiveLock && !exclusiveLock.equals(tid)) {
                         Thread.yield();
@@ -221,25 +220,26 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1|lab2
         synchronized (exclusiveLockManager) {
-            if (commit) {
-                for (Map.Entry<PageId, TransactionId> group : exclusiveLockManager.entrySet()) {
-                    if (group.getValue() != null && group.getValue().equals(tid)) {
-                        exclusiveLockManager.remove(group.getKey());
-                    }
-                }
 
-                for (Map.Entry<PageId, List<TransactionId>> group : sharedLockManager.entrySet()) {
-                    if (group.getValue() != null && group.getValue().size() > 0) {
-                        List<TransactionId> sharedTids = group.getValue();
-                        for (TransactionId sharedTid : sharedTids) {
-                            if (sharedTid.equals(tid)) {
-                                sharedTids.remove(tid);
-                            }
-                        }
-                    }
+            for (Map.Entry<PageId, TransactionId> group : exclusiveLockManager.entrySet()) {
+                if (group.getValue() != null && group.getValue().equals(tid)) {
+                    exclusiveLockManager.remove(group.getKey());
                 }
+            }
+
+            for (Map.Entry<PageId, List<TransactionId>> group : sharedLockManager.entrySet()) {
+                if (group.getValue() != null && group.getValue().size() > 0) {
+                    List<TransactionId> sharedTids = group.getValue();
+                    sharedTids.remove(tid);
+                }
+            }
+
+            if (commit) {
+                flushAllPages();
             } else {
-                // TODO abort
+                for (Map.Entry<PageId, Page> group : bufferPool.entrySet()) {
+                    discardPage(group.getKey());
+                }
             }
         }
     }
@@ -353,16 +353,10 @@ public class BufferPool {
     private synchronized void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
-        // TODO
-//        try {
-//            Transaction flushPageAction = new Transaction();
-//            flushPageAction.start();
-//            Page page = this.getPage(flushPageAction.getId() , pid, Permissions.READ_ONLY);
-//            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
-//            flushPageAction.commit();
-//        } catch (TransactionAbortedException | DbException e) {
-//            e.printStackTrace();
-//        }
+        for (Map.Entry<PageId, Page> group : bufferPool.entrySet()) {
+            Page page = group.getValue();
+            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
+        }
     }
 
     /**
