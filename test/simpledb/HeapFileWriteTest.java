@@ -4,6 +4,7 @@ import junit.framework.JUnit4TestAdapter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import simpledb.transaction.TransactionId;
 import simpledb.util.Utility;
 
 import static org.junit.Assert.assertEquals;

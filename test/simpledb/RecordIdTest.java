@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import simpledb.page.pageid.HeapPageId;
 import simpledb.systemtest.SimpleDbTestBase;
+import simpledb.tuple.RecordId;
 
 public class RecordIdTest extends SimpleDbTestBase {
 

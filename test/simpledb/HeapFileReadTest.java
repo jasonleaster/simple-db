@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 import junit.framework.JUnit4TestAdapter;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.TupleDesc;
 import simpledb.util.Utility;
 
