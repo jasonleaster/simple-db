@@ -5,6 +5,7 @@ import org.junit.Test;
 import simpledb.field.IntField;
 import simpledb.page.pageid.HeapPageId;
 import simpledb.systemtest.SimpleDbTestBase;
+import simpledb.tuple.RecordId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 import simpledb.util.Utility;
