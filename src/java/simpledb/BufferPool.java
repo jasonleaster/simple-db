@@ -47,6 +47,9 @@ public class BufferPool {
     private final Map<PageId, List<TransactionId>> sharedLockManager = new ConcurrentHashMap<>();
     private final Map<PageId, TransactionId> exclusiveLockManager = new ConcurrentHashMap<>();
 
+    // 等待其他锁可能有多个，一对多的关系
+    private final Map<TransactionId, List<TransactionId>> waitForGraph = new ConcurrentHashMap<>();
+
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -111,6 +114,8 @@ public class BufferPool {
                     boolean haveExclusiveLock = exclusiveLock != null;
                     // 已有排它锁受到阻塞
                     if (haveExclusiveLock && !exclusiveLock.equals(tid)) {
+                        this.dealWithDeadLock(pid, tid, perm);
+
                         Thread.yield();
                     } else {
                         // 设置共享锁
@@ -130,6 +135,8 @@ public class BufferPool {
                     boolean haveSharedLock = sharedTransactions != null && sharedTransactions.size() > 0;
                     // 已有共享锁受到阻塞
                     if (haveSharedLock && !sharedTransactions.contains(tid)) {
+                        this.dealWithDeadLock(pid, tid, perm);
+
                         Thread.yield();
                     } else {
                         // 考虑锁升级的情况
@@ -139,6 +146,8 @@ public class BufferPool {
                         TransactionId oldTid = exclusiveLockManager.get(pid);
                         boolean haveExclusiveLock = oldTid != null;
                         if (haveExclusiveLock && !oldTid.equals(tid)) {
+                            this.dealWithDeadLock(pid, tid, perm);
+
                             Thread.yield();
                         } else {
                             // 设置排它锁
@@ -388,6 +397,92 @@ public class BufferPool {
             }
             bufferPool.remove(group.getKey());
             return;
+        }
+    }
+
+    private void dealWithDeadLock(PageId pid, TransactionId tid, Permissions perm) {
+
+        TransactionId exclusiveLock = exclusiveLockManager.get(pid);
+        boolean haveExclusiveLock = exclusiveLock != null;
+
+        List<TransactionId> sharedTransactions = sharedLockManager.get(pid);
+        boolean haveSharedLock = sharedTransactions != null && sharedTransactions.size() > 0;
+
+        List<TransactionId> waitingTids = new ArrayList<>();
+        if (haveExclusiveLock) {
+            waitingTids.add(exclusiveLock);
+        }
+
+        if (perm == Permissions.READ_WRITE) {
+            if (haveSharedLock) {
+                waitingTids.addAll(sharedTransactions);
+            }
+        }
+
+        /*
+         *  wait all these tid to finished
+         */
+        List<TransactionId> waitsFor = this.waitForGraph.computeIfAbsent(tid, k -> new ArrayList<>());
+        for (TransactionId waitingTid : waitingTids) {
+            if (!waitsFor.contains(waitingTid)) {
+                waitsFor.add(waitingTid);
+            }
+        }
+
+
+        /*
+           tid is waiting for the other transaction to release
+           the exclusive lock on the page
+         */
+        // dead lock checking
+        if (this.isDeadLockTransaction(tid)) {
+            // break the dead locking
+            try {
+                this.transactionComplete(tid, false);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("Abort Dead lock failed!! This shouldn't happen");
+            }
+        }
+    }
+
+    /**
+     * Check if there have dead lock in the transaction waiting graph.
+     *
+     * @param tid TransactionId
+     * @return return true if there have dead lock
+     */
+    private boolean isDeadLockTransaction(TransactionId tid) {
+        List<TransactionId> targets = this.waitForGraph.get(tid);
+
+        if (targets == null || targets.size() == 0) {
+            return false;
+        } else {
+            List<TransactionId> waitingList = new ArrayList<>();
+            waitingList.add(tid);
+            // 类似于广度优先搜索
+            while (true) {
+                boolean noChild = true;
+                List<TransactionId> nextTargets = new ArrayList<>();
+                for (TransactionId target : targets) {
+                    List<TransactionId> waitFor = this.waitForGraph.get(target);
+
+                    if (waitFor != null && waitFor.size() > 0) {
+                        if (waitingList.contains(target)) {
+                            return true;
+                        } else {
+                            noChild = false;
+                            nextTargets.addAll(waitFor);
+                            waitingList.addAll(waitFor);
+                        }
+                    }
+                }
+                if (noChild) {
+                    return false;
+                } else {
+                    targets = nextTargets;
+                }
+            }
         }
     }
 
