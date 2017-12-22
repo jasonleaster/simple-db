@@ -100,16 +100,16 @@ public class BTreeFileInsertTest extends SimpleDbTestBase {
         Database.reset();
         int entriesPerPage = BTreeUtility.getNumEntriesPerPage();
         BTreeFile empty = BTreeUtility.createEmptyBTreeFile(emptyFile.getAbsolutePath(), 2, 0, 3 + entriesPerPage);
-        int tableid = empty.getId();
+        int tableId = empty.getId();
         int keyField = 0;
 
         // create the internal page
-        BTreePageId leftPageId = new BTreePageId(tableid, 2, BTreePageId.INTERNAL);
+        BTreePageId leftPageId = new BTreePageId(tableId, 2, BTreePageId.INTERNAL);
         BTreeInternalPage leftPage = BTreeUtility.createRandomInternalPage(leftPageId, keyField, BTreePageId.LEAF,
                 0, BTreeUtility.MAX_RAND_VALUE, 3);
 
         // create the parent page
-        BTreePageId parentId = new BTreePageId(tableid, 1, BTreePageId.INTERNAL);
+        BTreePageId parentId = new BTreePageId(tableId, 1, BTreePageId.INTERNAL);
         BTreeInternalPage parent = new BTreeInternalPage(parentId,
                 BTreeInternalPage.createEmptyPageData(), keyField);
 
@@ -117,19 +117,19 @@ public class BTreeFileInsertTest extends SimpleDbTestBase {
         leftPage.setParentId(parentId);
 
         Field field = new IntField(BTreeUtility.MAX_RAND_VALUE / 2);
-        HashMap<PageId, Page> dirtypages = new HashMap<PageId, Page>();
-        dirtypages.put(leftPageId, leftPage);
-        dirtypages.put(parentId, parent);
-        BTreeInternalPage page = empty.splitInternalPage(tid, dirtypages, leftPage, field);
+        HashMap<PageId, Page> dirtyPages = new HashMap<>();
+        dirtyPages.put(leftPageId, leftPage);
+        dirtyPages.put(parentId, parent);
+        BTreeInternalPage page = empty.splitInternalPage(tid, dirtyPages, leftPage, field);
         BTreeInternalPage otherPage;
         assertEquals(1, parent.getNumEntries());
         BTreeEntry parentEntry = parent.iterator().next();
         if (parentEntry.getLeftChild().equals(page.getId())) {
-            otherPage = (BTreeInternalPage) dirtypages.get(parentEntry.getRightChild());
+            otherPage = (BTreeInternalPage) dirtyPages.get(parentEntry.getRightChild());
             assertTrue(field.compare(Op.LESS_THAN_OR_EQ,
                     otherPage.iterator().next().getKey()));
         } else { // parentEntry.getRightChild().equals(page.getId())
-            otherPage = (BTreeInternalPage) dirtypages.get(parentEntry.getLeftChild());
+            otherPage = (BTreeInternalPage) dirtyPages.get(parentEntry.getLeftChild());
             assertTrue(field.compare(Op.GREATER_THAN_OR_EQ,
                     otherPage.reverseIterator().next().getKey()));
         }

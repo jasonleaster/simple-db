@@ -27,6 +27,7 @@ import simpledb.tuple.TupleDesc;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -304,8 +305,11 @@ public class BTreeFile implements DbFile {
         }
         ArrayList<Tuple> newPageTuples = new ArrayList<>(totalTuples / 2);
         for (int i = 0; i < totalTuples / 2; i++) {
-            newPageTuples.add(tuples.next());
+            Tuple tuple = tuples.next();
+            newPageTuples.add(tuple);
+            page.deleteTuple(tuple);
         }
+
         TupleDesc tupleDesc = newPageTuples.get(0).getTupleDesc();
         int numFiles = tupleDesc.numFields();
         Type[] typeAr = new Type[numFiles];
@@ -364,7 +368,43 @@ public class BTreeFile implements DbFile {
         // the parent pointers of all the children moving to the new page.  updateParentPointers()
         // will be useful here.  Return the page into which an entry with the given key field
         // should be inserted.
-        return null;
+        final int pageSize = BufferPool.getPageSize();
+        Iterator<BTreeEntry> entryIterator = page.iterator();
+        int numEntries = page.getNumEntries();
+        if (numEntries <= 1) {
+            throw new DbException("The number of total entries can be less than 1");
+        }
+        ArrayList<BTreeEntry> splitEntries = new ArrayList<>(numEntries / 2);
+        for (int i = 0; i < numEntries; i++) {
+            BTreeEntry entry = entryIterator.next();
+            if (i >= (numEntries / 2)) {
+                splitEntries.add(entry);
+            }
+        }
+
+        BTreeEntry middleEntry = splitEntries.get(0);
+        page.deleteKeyAndRightChild(middleEntry);
+        splitEntries.remove(middleEntry);
+
+        Field newField = middleEntry.getKey();
+
+        int childPageCategory = BTreePageId.LEAF;
+        byte[] internalPageBytes = BTreeFileEncoder.convertToInternalPage(splitEntries, pageSize, newField.getType(), childPageCategory);
+        BTreePageId newPageId = new BTreePageId(this.tableId, this.numPages() + 1, BTreePageId.INTERNAL);
+        BTreeInternalPage newInternalPage = new BTreeInternalPage(newPageId, internalPageBytes, keyField);
+        BTreeInternalPage parentPage = this.getParentWithEmptySlots(tid, dirtyPages, page.getParentId(), field);
+
+
+        //  Push the middle key up into the parent page
+        middleEntry.setLeftChild(page.getId());
+        middleEntry.setRightChild(newInternalPage.getId());
+        parentPage.insertEntry(middleEntry);
+
+        if (parentPage.getNumEmptySlots() == 0) {
+            newInternalPage = this.splitInternalPage(tid, dirtyPages, parentPage, field);
+        }
+
+        return newInternalPage;
     }
 
     /**
