@@ -69,7 +69,7 @@ public class HeapFile implements DbFile {
      * you will need to generate this tableid somewhere to ensure that each
      * HeapFile has a "unique id," and that you always return the same value for
      * a particular HeapFile. We suggest hashing the absolute diskFile name of the
-     * diskFile underlying the heapfile, i.e. f.getAbsoluteFile().hashCode().
+     * diskFile underlying the heapfile, i.e. file.getAbsoluteFile().hashCode().
      *
      * @return an ID uniquely identifying this HeapFile.
      */

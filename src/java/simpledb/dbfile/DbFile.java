@@ -88,7 +88,7 @@ public interface DbFile {
      * ensure that each HeapFile has a "unique id," and that you always
      * return the same value for a particular HeapFile. A simple implementation
      * is to use the hash code of the absolute path of the file underlying
-     * the HeapFile, i.e. <code>f.getAbsoluteFile().hashCode()</code>.
+     * the HeapFile, i.e. <code>file.getAbsoluteFile().hashCode()</code>.
      *
      * @return an ID uniquely identifying this HeapFile.
      */

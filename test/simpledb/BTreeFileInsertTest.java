@@ -148,34 +148,32 @@ public class BTreeFileInsertTest extends SimpleDbTestBase {
         emptyFile.deleteOnExit();
         Database.reset();
         BTreeFile empty = BTreeUtility.createEmptyBTreeFile(emptyFile.getAbsolutePath(), 2, 0, 3);
-        int tableid = empty.getId();
+        int tableId = empty.getId();
         int keyField = 0;
 
         // create the leaf page
-        HashMap<PageId, Page> dirtypages = new HashMap<PageId, Page>();
-        empty.setEmptyPage(tid, dirtypages, 2);
-        BTreePageId leftPageId = new BTreePageId(tableid, 3, BTreePageId.LEAF);
-        BTreeLeafPage leftPage = BTreeUtility.createRandomLeafPage(leftPageId, 2, keyField,
-                0, BTreeUtility.MAX_RAND_VALUE);
+        HashMap<PageId, Page> dirtyPages = new HashMap<PageId, Page>();
+        empty.setEmptyPage(tid, dirtyPages, 2);
+        BTreePageId leftPageId = new BTreePageId(tableId, 3, BTreePageId.LEAF);
+        BTreeLeafPage leftPage = BTreeUtility.createRandomLeafPage(leftPageId, 2, keyField, 0, BTreeUtility.MAX_RAND_VALUE);
 
         // create the parent page
-        BTreePageId parentId = new BTreePageId(tableid, 1, BTreePageId.INTERNAL);
-        BTreeInternalPage parent = new BTreeInternalPage(parentId,
-                BTreeInternalPage.createEmptyPageData(), keyField);
+        BTreePageId parentId = new BTreePageId(tableId, 1, BTreePageId.INTERNAL);
+        BTreeInternalPage parent = new BTreeInternalPage(parentId, BTreeInternalPage.createEmptyPageData(), keyField);
 
         // set the pointers
         leftPage.setParentId(parentId);
 
         Field field = new IntField(BTreeUtility.MAX_RAND_VALUE / 2);
-        dirtypages.put(leftPageId, leftPage);
-        dirtypages.put(parentId, parent);
-        BTreeLeafPage page = empty.splitLeafPage(tid, dirtypages, leftPage, field);
+        dirtyPages.put(leftPageId, leftPage);
+        dirtyPages.put(parentId, parent);
+        BTreeLeafPage page = empty.splitLeafPage(tid, dirtyPages, leftPage, field);
         assertTrue(page.getLeftSiblingId() != null || page.getRightSiblingId() != null);
         BTreeLeafPage otherPage;
         if (page.getLeftSiblingId() != null) {
-            otherPage = (BTreeLeafPage) dirtypages.get(page.getLeftSiblingId());
+            otherPage = (BTreeLeafPage) dirtyPages.get(page.getLeftSiblingId());
         } else { // page.getRightSiblingId() != null
-            otherPage = (BTreeLeafPage) dirtypages.get(page.getRightSiblingId());
+            otherPage = (BTreeLeafPage) dirtyPages.get(page.getRightSiblingId());
         }
 
         assertTrue(page.getId().getPageNumber() == 2 || otherPage.getId().getPageNumber() == 2);

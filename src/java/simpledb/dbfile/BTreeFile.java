@@ -317,12 +317,17 @@ public class BTreeFile implements DbFile {
             typeAr[i] = tupleDesc.getFieldType(i);
         }
 
-        byte[] leafPageBytes = BTreeFileEncoder.convertToLeafPage(newPageTuples, pageSize, numFiles, typeAr, keyField);
-        BTreePageId newPageId = new BTreePageId(this.tableId, this.numPages() + 1, BTreePageId.LEAF);
-        BTreeLeafPage newLeafPage = new BTreeLeafPage(newPageId, leafPageBytes, keyField);
+        // byte[] leafPageBytes = BTreeFileEncoder.convertToLeafPage(newPageTuples, pageSize, numFiles, typeAr, keyField);
+        BTreeLeafPage newLeafPage = (BTreeLeafPage) this.getEmptyPage(tid, dirtyPages, BTreePageId.LEAF);
+
+        for (Tuple tuple : newPageTuples) {
+            newLeafPage.insertTuple(tuple);
+        }
+
+        //newLeafPage = new BTreeLeafPage(newPageId, leafPageBytes, keyField);
         BTreeInternalPage internalPage = this.getParentWithEmptySlots(tid, dirtyPages, page.getParentId(), field);
 
-        BTreeEntry newBTreeEntry = new BTreeEntry(field, page.getId(), newPageId);
+        BTreeEntry newBTreeEntry = new BTreeEntry(field, page.getId(), newLeafPage.getId());
         if (internalPage.getNumEmptySlots() == 0) {
             internalPage = this.splitInternalPage(tid, dirtyPages, internalPage, field);
         }
@@ -332,6 +337,11 @@ public class BTreeFile implements DbFile {
         page.setLeftSiblingId(page.getId());
 
         internalPage.insertEntry(newBTreeEntry);
+
+        dirtyPages.put(page.getId(), page);
+        dirtyPages.put(newLeafPage.getId(), newLeafPage);
+        dirtyPages.put(internalPage.getId(), internalPage);
+
         return newLeafPage;
     }
 
@@ -379,14 +389,13 @@ public class BTreeFile implements DbFile {
             BTreeEntry entry = entryIterator.next();
             if (i >= (numEntries / 2)) {
                 splitEntries.add(entry);
+                page.deleteKeyAndRightChild(entry);
             }
         }
 
         BTreeEntry middleEntry = splitEntries.get(0);
-        page.deleteKeyAndRightChild(middleEntry);
         splitEntries.remove(middleEntry);
-
-        Field newField = middleEntry.getKey();
+        Field newField = splitEntries.get(0).getKey();
 
         int childPageCategory = BTreePageId.LEAF;
         byte[] internalPageBytes = BTreeFileEncoder.convertToInternalPage(splitEntries, pageSize, newField.getType(), childPageCategory);
@@ -399,6 +408,10 @@ public class BTreeFile implements DbFile {
         middleEntry.setLeftChild(page.getId());
         middleEntry.setRightChild(newInternalPage.getId());
         parentPage.insertEntry(middleEntry);
+
+        dirtyPages.put(page.getId(), page);
+        dirtyPages.put(newInternalPage.getId(), newInternalPage);
+        dirtyPages.put(parentPage.getId(), parentPage);
 
         if (parentPage.getNumEmptySlots() == 0) {
             newInternalPage = this.splitInternalPage(tid, dirtyPages, parentPage, field);
@@ -1022,7 +1035,7 @@ public class BTreeFile implements DbFile {
      * returns a clean copy locked with read-write permission
      *
      * @param tid        - the transaction id
-     * @param dirtypages - the list of dirty pages which should be updated with all new dirty pages
+     * @param dirtyPages - the list of dirty pages which should be updated with all new dirty pages
      * @param pgcateg    - the BTreePageId category of the new page.  Either LEAF, INTERNAL, or HEADER
      * @return the new empty page
      * @throws DbException
@@ -1031,10 +1044,10 @@ public class BTreeFile implements DbFile {
      * @see #getEmptyPageNo(TransactionId, HashMap)
      * @see #setEmptyPage(TransactionId, HashMap, int)
      */
-    private Page getEmptyPage(TransactionId tid, HashMap<PageId, Page> dirtypages, int pgcateg)
+    private Page getEmptyPage(TransactionId tid, HashMap<PageId, Page> dirtyPages, int pgcateg)
             throws DbException, IOException, TransactionAbortedException {
         // create the new page
-        int emptyPageNo = getEmptyPageNo(tid, dirtypages);
+        int emptyPageNo = getEmptyPageNo(tid, dirtyPages);
         BTreePageId newPageId = new BTreePageId(tableId, emptyPageNo, pgcateg);
 
         // write empty page to disk
@@ -1045,9 +1058,9 @@ public class BTreeFile implements DbFile {
 
         // make sure the page is not in the buffer pool	or in the local cache
         Database.getBufferPool().discardPage(newPageId);
-        dirtypages.remove(newPageId);
+        dirtyPages.remove(newPageId);
 
-        return getPage(tid, dirtypages, newPageId, Permissions.READ_WRITE);
+        return getPage(tid, dirtyPages, newPageId, Permissions.READ_WRITE);
     }
 
     /**
