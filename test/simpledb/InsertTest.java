@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import simpledb.operator.Insert;
 import simpledb.operator.OpIterator;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.TupleDesc;
 import simpledb.util.Utility;
 
