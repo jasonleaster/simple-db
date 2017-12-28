@@ -450,15 +450,18 @@ public class BTreeLeafPage extends BTreePage {
      */
     public int getNumEmptySlots() {
         int cnt = 0;
-        for (int i = 0; i < numSlots; i++)
-            if (!isSlotUsed(i))
+        for (int i = 0; i < numSlots; i++) {
+            if (!isSlotUsed(i)) {
                 cnt++;
+            }
+        }
         return cnt;
     }
 
     /**
      * Returns true if associated slot on this page is filled.
      */
+    @Override
     public boolean isSlotUsed(int i) {
         int headerBit = i % 8;
         int headerByte = (i - headerBit) / 8;
@@ -473,10 +476,13 @@ public class BTreeLeafPage extends BTreePage {
         int headerByte = (i - headerBit) / 8;
 
         Debug.log(1, "BTreeLeafPage.setSlot: setting slot %d to %b", i, value);
-        if (value)
+        if (value) {
             header[headerByte] |= 1 << headerBit;
-        else
+        }
+        else {
             header[headerByte] &= (0xFF ^ (1 << headerBit));
+        }
+
     }
 
     /**
@@ -555,21 +561,25 @@ class BTreeLeafPageIterator implements Iterator<Tuple> {
         this.p = p;
     }
 
+    @Override
     public boolean hasNext() {
-        if (nextToReturn != null)
+        if (nextToReturn != null) {
             return true;
+        }
 
         try {
             while (true) {
                 nextToReturn = p.getTuple(curTuple++);
-                if (nextToReturn != null)
+                if (nextToReturn != null) {
                     return true;
+                }
             }
         } catch (NoSuchElementException e) {
             return false;
         }
     }
 
+    @Override
     public Tuple next() {
         Tuple next = nextToReturn;
 
@@ -586,6 +596,7 @@ class BTreeLeafPageIterator implements Iterator<Tuple> {
         }
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
@@ -604,15 +615,19 @@ class BTreeLeafPageReverseIterator implements Iterator<Tuple> {
         this.curTuple = p.getMaxTuples() - 1;
     }
 
+    @Override
     public boolean hasNext() {
-        if (nextToReturn != null)
+        if (nextToReturn != null) {
             return true;
+        }
+
 
         try {
             while (curTuple >= 0) {
                 nextToReturn = p.getTuple(curTuple--);
-                if (nextToReturn != null)
+                if (nextToReturn != null) {
                     return true;
+                }
             }
             return false;
         } catch (NoSuchElementException e) {
@@ -620,6 +635,7 @@ class BTreeLeafPageReverseIterator implements Iterator<Tuple> {
         }
     }
 
+    @Override
     public Tuple next() {
         Tuple next = nextToReturn;
 
@@ -628,14 +644,16 @@ class BTreeLeafPageReverseIterator implements Iterator<Tuple> {
                 next = nextToReturn;
                 nextToReturn = null;
                 return next;
-            } else
+            } else {
                 throw new NoSuchElementException();
+            }
         } else {
             nextToReturn = null;
             return next;
         }
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
