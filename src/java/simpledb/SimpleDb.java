@@ -2,7 +2,9 @@ package simpledb;
 
 import simpledb.dbfile.DbFile;
 import simpledb.dbfile.DbFileIterator;
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 import simpledb.util.Utility;
 
