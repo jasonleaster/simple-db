@@ -1,9 +1,14 @@
-package simpledb;
+package simpledb.operator;
 
+import simpledb.Database;
+import simpledb.IndexPredicate;
+import simpledb.Type;
 import simpledb.dbfile.BTreeFile;
 import simpledb.dbfile.DbFileIterator;
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.operator.OpIterator;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
