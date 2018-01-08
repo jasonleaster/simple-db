@@ -362,9 +362,11 @@ public class BufferPool {
     private synchronized void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
-        for (Map.Entry<PageId, Page> group : bufferPool.entrySet()) {
-            Page page = group.getValue();
-            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
+        Page pageToBeFlushed = bufferPool.get(pid);
+        if (pageToBeFlushed != null) {
+            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pageToBeFlushed);
+            pageToBeFlushed.setBeforeImage();
+            Database.getLogFile().logWrite(new TransactionId(), pageToBeFlushed.getBeforeImage(), pageToBeFlushed);
         }
     }
 

@@ -3,6 +3,7 @@ package simpledb;
 
 import simpledb.page.Page;
 import simpledb.page.pageid.PageId;
+import simpledb.transaction.TransactionId;
 
 import java.io.*;
 import java.util.*;
@@ -76,25 +77,27 @@ for each active transaction.
 
 public class LogFile {
 
-    final File logFile;
+    private final File logFile;
     private RandomAccessFile raf;
-    Boolean recoveryUndecided; // no call to recover() and no append to log
+    // no call to recover() and no append to log
+    private Boolean recoveryUndecided;
 
-    static final int ABORT_RECORD = 1;
-    static final int COMMIT_RECORD = 2;
-    static final int UPDATE_RECORD = 3;
-    static final int BEGIN_RECORD = 4;
-    static final int CHECKPOINT_RECORD = 5;
-    static final long NO_CHECKPOINT_ID = -1;
+    private static final int ABORT_RECORD      = 1;
+    private static final int COMMIT_RECORD     = 2;
+    private static final int UPDATE_RECORD     = 3;
+    private static final int BEGIN_RECORD      = 4;
+    private static final int CHECKPOINT_RECORD = 5;
+    private static final long NO_CHECKPOINT_ID = -1;
 
-    final static int INT_SIZE = 4;
-    final static int LONG_SIZE = 8;
+    private final static int INT_SIZE = 4;
+    private final static int LONG_SIZE = 8;
 
-    long currentOffset = -1;//protected by this
+    //protected by this
+    private long currentOffset = -1;
 //    int pageSize;
     int totalRecords = 0; // for PatchTest //protected by this
 
-    HashMap<Long,Long> tidToFirstLogRecord = new HashMap<Long,Long>();
+    private HashMap<Long,Long> tidToFirstLogRecord = new HashMap<Long,Long>();
 
     /** Constructor.
         Initialize and back the log file with the specified file.
@@ -197,8 +200,7 @@ public class LogFile {
 
         @see Page#getBeforeImage
     */
-    public  synchronized void logWrite(TransactionId tid, Page before,
-                                       Page after)
+    public  synchronized void logWrite(TransactionId tid, Page before, Page after)
         throws IOException  {
         Debug.log("WRITE, offset = " + raf.getFilePointer());
         preAppend();
@@ -279,18 +281,9 @@ public class LogFile {
             pageArgs[1] = pageData;
 
             newPage = (Page)pageConsts[0].newInstance(pageArgs);
-
-            //            Debug.log("READ PAGE OF TYPE " + pageClassName + ", table = " + newPage.getId().getTableId() + ", page = " + newPage.getId().pageno());
-        } catch (ClassNotFoundException e){
-            e.printStackTrace();
-            throw new IOException();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-            throw new IOException();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-            throw new IOException();
-        } catch (InvocationTargetException e) {
+            // Debug.log("READ PAGE OF TYPE " + pageClassName + ", table = " + newPage.getId().getTableId() + ", page = " + newPage.getId().pageno());
+        } catch (ClassNotFoundException | InstantiationException |
+                 IllegalAccessException | InvocationTargetException e){
             e.printStackTrace();
             throw new IOException();
         }
