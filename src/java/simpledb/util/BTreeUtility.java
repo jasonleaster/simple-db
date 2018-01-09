@@ -14,14 +14,14 @@ import java.util.concurrent.BlockingQueue;
 
 import simpledb.BTreeEntry;
 import simpledb.BTreeFileEncoder;
-import simpledb.BTreeRootPtrPage;
+import simpledb.page.BTreeRootPtrPage;
 import simpledb.BufferPool;
 import simpledb.Database;
-import simpledb.DbException;
+import simpledb.exception.DbException;
 import simpledb.IndexPredicate;
 import simpledb.operator.Predicate.Op;
-import simpledb.RecordId;
-import simpledb.TransactionId;
+import simpledb.tuple.RecordId;
+import simpledb.transaction.TransactionId;
 import simpledb.Type;
 import simpledb.dbfile.BTreeFile;
 import simpledb.dbfile.DbFileIterator;
@@ -271,14 +271,14 @@ public class BTreeUtility {
 	/**
 	 * Generate a random set of entries for testing
 	 * @param numKeys - the number of keys
-	 * @param tableid - the tableid
+	 * @param tableId - the tableId
 	 * @param childPageCategory - the child page category (LEAF or INTERNAL)
 	 * @param minKey - the minimum key value
 	 * @param maxKey - the maximum key value
 	 * @param minChildPtr - the first child pointer
 	 * @return the list of entries
 	 */
-	public static ArrayList<BTreeEntry> generateRandomEntries(int numKeys, int tableid, int childPageCategory, int minKey, int maxKey, int minChildPtr) {
+	public static ArrayList<BTreeEntry> generateRandomEntries(int numKeys, int tableId, int childPageCategory, int minKey, int maxKey, int minChildPtr) {
 		ArrayList<Integer> keys = new ArrayList<Integer>(numKeys);
 		ArrayList<Integer> childPointers = new ArrayList<Integer>(numKeys+1);
 		generateRandomEntries(numKeys, minKey, maxKey, minChildPtr, childPointers, keys);
@@ -286,8 +286,8 @@ public class BTreeUtility {
 		ArrayList<BTreeEntry> entryList = new ArrayList<BTreeEntry>();
 		for(int i = 0; i < numKeys; ++i) {
 			entryList.add(new BTreeEntry(new IntField(keys.get(i)), 
-					new BTreePageId(tableid, childPointers.get(i), childPageCategory), 
-					new BTreePageId(tableid, childPointers.get(i+1), childPageCategory)));
+					new BTreePageId(tableId, childPointers.get(i), childPageCategory),
+					new BTreePageId(tableId, childPointers.get(i+1), childPageCategory)));
 		}
 		return entryList;
 	}

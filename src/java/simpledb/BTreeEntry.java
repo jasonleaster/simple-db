@@ -3,6 +3,7 @@ package simpledb;
 import simpledb.field.Field;
 import simpledb.page.BTreeInternalPage;
 import simpledb.page.pageid.BTreePageId;
+import simpledb.tuple.RecordId;
 
 import java.io.Serializable;
 

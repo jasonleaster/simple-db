@@ -1,7 +1,7 @@
 package simpledb.util;
 
 import simpledb.Database;
-import simpledb.RecordId;
+import simpledb.tuple.RecordId;
 import simpledb.Type;
 import simpledb.dbfile.HeapFile;
 import simpledb.field.IntField;

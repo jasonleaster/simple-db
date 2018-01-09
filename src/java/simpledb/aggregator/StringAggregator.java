@@ -1,6 +1,6 @@
 package simpledb.aggregator;
 
-import simpledb.DbException;
+import simpledb.exception.DbException;
 import simpledb.Type;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.field.Field;

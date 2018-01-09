@@ -35,6 +35,7 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -88,6 +89,7 @@ public class BTreeFile implements DbFile {
      *
      * @return an ID uniquely identifying this BTreeFile.
      */
+    @Override
     public int getId() {
         return tableId;
     }
@@ -97,6 +99,7 @@ public class BTreeFile implements DbFile {
      *
      * @return TupleDesc of this DbFile.
      */
+    @Override
     public TupleDesc getTupleDesc() {
         return td;
     }
@@ -108,6 +111,7 @@ public class BTreeFile implements DbFile {
      * @param pid - the id of the page to read from disk
      * @return the page constructed from the contents on disk
      */
+    @Override
     public Page readPage(PageId pid) {
         BTreePageId id = (BTreePageId) pid;
         BufferedInputStream bis = null;
@@ -173,6 +177,7 @@ public class BTreeFile implements DbFile {
      *
      * @param page - the page to write to disk
      */
+    @Override
     public void writePage(Page page) throws IOException {
         BTreePageId id = (BTreePageId) page.getId();
 
@@ -811,7 +816,7 @@ public class BTreeFile implements DbFile {
      * Update sibling pointers as needed, and make the right page available for reuse.
      *
      * @param tid         - the transaction id
-     * @param dirtypages  - the list of dirty pages which should be updated with all new dirty pages
+     * @param dirtyPages  - the list of dirty pages which should be updated with all new dirty pages
      * @param leftPage    - the left leaf page
      * @param rightPage   - the right leaf page
      * @param parent      - the parent of the two pages
@@ -821,7 +826,7 @@ public class BTreeFile implements DbFile {
      * @throws TransactionAbortedException
      * @see #deleteParentEntry(TransactionId, HashMap, BTreePage, BTreeInternalPage, BTreeEntry)
      */
-    public void mergeLeafPages(TransactionId tid, HashMap<PageId, Page> dirtypages,
+    public void mergeLeafPages(TransactionId tid, HashMap<PageId, Page> dirtyPages,
                                BTreeLeafPage leftPage, BTreeLeafPage rightPage, BTreeInternalPage parent, BTreeEntry parentEntry)
             throws DbException, IOException, TransactionAbortedException {
 
@@ -831,6 +836,19 @@ public class BTreeFile implements DbFile {
         // the sibling pointers, and make the right page available for reuse.
         // Delete the entry in the parent corresponding to the two pages that are merging -
         // deleteParentEntry() will be useful here
+        Iterator<Tuple> tupleIterator = rightPage.iterator();
+        List<Tuple> tuplesToBeMoved = new ArrayList<>();
+        while (tupleIterator.hasNext()) {
+            Tuple tuple = tupleIterator.next();
+            leftPage.insertTuple(tuple);
+            tuplesToBeMoved.add(tuple);
+        }
+
+        for (Tuple tuple : tuplesToBeMoved) {
+            rightPage.deleteTuple(tuple);
+        }
+
+        this.deleteParentEntry(tid, dirtyPages, leftPage, parent, parentEntry);
     }
 
     /**
@@ -921,24 +939,25 @@ public class BTreeFile implements DbFile {
      * many pages since parent pointers will need to be updated when an internal node merges.
      * @see #handleMinOccupancyPage(TransactionId, HashMap, BTreePage)
      */
+    @Override
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
-        HashMap<PageId, Page> dirtypages = new HashMap<PageId, Page>();
+        HashMap<PageId, Page> dirtyPages = new HashMap<>();
 
         BTreePageId pageId = new BTreePageId(tableId, t.getRecordId().getPageId().getPageNumber(),
                 BTreePageId.LEAF);
-        BTreeLeafPage page = (BTreeLeafPage) getPage(tid, dirtypages, pageId, Permissions.READ_WRITE);
+        BTreeLeafPage page = (BTreeLeafPage) getPage(tid, dirtyPages, pageId, Permissions.READ_WRITE);
         page.deleteTuple(t);
 
         // if the page is below minimum occupancy, get some tuples from its siblings
         // or merge with one of the siblings
         int maxEmptySlots = page.getMaxTuples() - page.getMaxTuples() / 2; // ceiling
         if (page.getNumEmptySlots() > maxEmptySlots) {
-            handleMinOccupancyPage(tid, dirtypages, page);
+            handleMinOccupancyPage(tid, dirtyPages, page);
         }
 
         ArrayList<Page> dirtyPagesArr = new ArrayList<Page>();
-        dirtyPagesArr.addAll(dirtypages.values());
+        dirtyPagesArr.addAll(dirtyPages.values());
         return dirtyPagesArr;
     }
 

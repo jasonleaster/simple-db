@@ -1,6 +1,6 @@
 package simpledb.aggregator;
 
-import simpledb.DbException;
+import simpledb.exception.DbException;
 import simpledb.Type;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.field.Field;
@@ -21,9 +21,9 @@ public class IntegerAggregator implements Aggregator {
 
     private static final long serialVersionUID = 1L;
 
-    private int gbfield;
-    private Type gbfieldtype;
-    private int afield;
+    private int gbField;
+    private Type gbFieldType;
+    private int aField;
     private Op what;
 
     /**
@@ -47,23 +47,23 @@ public class IntegerAggregator implements Aggregator {
     /**
      * Aggregate constructor
      * 
-     * @param gbfield
+     * @param gbField
      *            the 0-based index of the group-by field in the result, or
      *            NO_GROUPING if there is no grouping
-     * @param gbfieldtype
+     * @param gbFieldType
      *            the type of the group by field (e.g., Type.INT_TYPE), or null
      *            if there is no grouping
-     * @param afield
+     * @param aField
      *            the 0-based index of the aggregate field in the result
      * @param what
      *            the aggregation operator
      */
 
-    public IntegerAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
+    public IntegerAggregator(int gbField, Type gbFieldType, int aField, Op what) {
         // some code goes here
-        this.gbfield = gbfield;
-        this.gbfieldtype = gbfieldtype;
-        this.afield = afield;
+        this.gbField = gbField;
+        this.gbFieldType = gbFieldType;
+        this.aField = aField;
         this.what = what;
 
         this.totalCounts = new ConcurrentHashMap<>();
@@ -89,10 +89,10 @@ public class IntegerAggregator implements Aggregator {
     public void mergeTupleIntoGroup(Tuple tuple) {
         // some code goes here
 
-        Field curGrpByField = tuple.getField(this.gbfield);
-        IntField curAgField = (IntField) tuple.getField(this.afield);
+        Field curGrpByField = tuple.getField(this.gbField);
+        IntField curAgField = (IntField) tuple.getField(this.aField);
 
-        if (curGrpByField.getType() != this.gbfieldtype) {
+        if (curGrpByField.getType() != this.gbFieldType) {
             return;
         }
 
