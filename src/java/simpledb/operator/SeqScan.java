@@ -1,8 +1,8 @@
 package simpledb.operator;
 
 import simpledb.Database;
-import simpledb.DbException;
-import simpledb.TransactionId;
+import simpledb.exception.DbException;
+import simpledb.transaction.TransactionId;
 import simpledb.dbfile.DbFile;
 import simpledb.dbfile.DbFileIterator;
 import simpledb.exception.TransactionAbortedException;

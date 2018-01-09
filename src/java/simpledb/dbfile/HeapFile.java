@@ -224,13 +224,16 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
         // some code goes here
-        return new HeapFileIterator(this.numPages());
+        return new HeapFileIterator(this.numPages(), tid);
     }
 
     private class HeapFileIterator extends AbstractDbFileIterator {
 
-        public HeapFileIterator(int pageNo) {
+        private TransactionId tid;
+
+        public HeapFileIterator(int pageNo, TransactionId tid) {
             this.pageNo = pageNo;
+            this.tid = tid;
         }
 
         private int pageNo;
@@ -248,9 +251,8 @@ public class HeapFile implements DbFile {
 
         private Iterator<Tuple> getHeapPageIterator(int pageNo)
                 throws DbException, TransactionAbortedException {
-            TransactionId transactionId = new TransactionId();
             PageId pageId = new HeapPageId(tableId, pageNo);
-            Page page = Database.getBufferPool().getPage(transactionId, pageId, Permissions.READ_WRITE);
+            Page page = Database.getBufferPool().getPage(tid, pageId, Permissions.READ_ONLY);
             return ((HeapPage) page).iterator();
         }
 
