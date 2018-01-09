@@ -363,10 +363,11 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         Page pageToBeFlushed = bufferPool.get(pid);
-        if (pageToBeFlushed != null) {
+        TransactionId tid = this.exclusiveLockManager.get(pid);
+        if (pageToBeFlushed != null && tid != null) {
             Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pageToBeFlushed);
             pageToBeFlushed.setBeforeImage();
-            Database.getLogFile().logWrite(new TransactionId(), pageToBeFlushed.getBeforeImage(), pageToBeFlushed);
+            Database.getLogFile().logWrite(tid, pageToBeFlushed.getBeforeImage(), pageToBeFlushed);
         }
     }
 

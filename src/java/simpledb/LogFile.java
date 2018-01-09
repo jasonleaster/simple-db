@@ -174,10 +174,11 @@ public class LogFile {
         }
     }
 
-    /** Write a commit record to disk for the specified tid,
-        and force the log to disk.
-
-        @param tid The committing transaction.
+    /**
+     *  Write a commit record to disk for the specified tid,
+     *  and force the log to disk.
+     *
+     *  @param tid The committing transaction.
     */
     public synchronized void logCommit(TransactionId tid) throws IOException {
         preAppend();
@@ -223,7 +224,7 @@ public class LogFile {
         Debug.log("WRITE OFFSET = " + currentOffset);
     }
 
-    void writePageData(RandomAccessFile raf, Page p) throws IOException{
+    private void writePageData(RandomAccessFile raf, Page p) throws IOException{
         PageId pid = p.getId();
         int pageInfo[] = pid.serialize();
 
@@ -251,7 +252,7 @@ public class LogFile {
         //        Debug.log ("WROTE PAGE DATA, CLASS = " + pageClassName + ", table = " +  pid.getTableId() + ", page = " + pid.pageno());
     }
 
-    Page readPageData(RandomAccessFile raf) throws IOException {
+    private Page readPageData(RandomAccessFile raf) throws IOException {
         PageId pid;
         Page newPage = null;
 
@@ -463,6 +464,23 @@ public class LogFile {
             synchronized(this) {
                 preAppend();
                 // some code goes here
+                Long recordOffset = this.tidToFirstLogRecord.get(tid.getId());
+                if (recordOffset != null) {
+                    this.raf.seek(recordOffset);
+                    while (true) {
+                        Integer type = raf.readInt();
+                        Long record_tid = raf.readLong();
+
+                        if (tid.getId() != record_tid) {
+                            break;
+                        } else {
+                            Page before = readPageData(raf);
+                            // discard this page
+                            Page after = readPageData(raf);
+                            Database.getCatalog().getDatabaseFile(before.getId().getTableId()).writePage(before);
+                        }
+                    }
+                }
             }
         }
     }
