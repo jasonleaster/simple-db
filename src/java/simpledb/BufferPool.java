@@ -5,6 +5,7 @@ import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.page.Page;
 import simpledb.page.pageid.PageId;
+import simpledb.transaction.Transaction;
 import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 
@@ -244,7 +245,7 @@ public class BufferPool {
             }
 
             if (commit) {
-                flushAllPages();
+                flushPages(tid);
             } else {
                 for (Map.Entry<PageId, Page> group : bufferPool.entrySet()) {
                     discardPage(group.getKey());
@@ -363,11 +364,12 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         Page pageToBeFlushed = bufferPool.get(pid);
-        TransactionId tid = this.exclusiveLockManager.get(pid);
+        TransactionId tid = pageToBeFlushed.isDirty();
         if (pageToBeFlushed != null && tid != null) {
-            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pageToBeFlushed);
+            Page before = pageToBeFlushed.getBeforeImage();
             pageToBeFlushed.setBeforeImage();
-            Database.getLogFile().logWrite(tid, pageToBeFlushed.getBeforeImage(), pageToBeFlushed);
+            Database.getLogFile().logWrite(tid, before, pageToBeFlushed);
+            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pageToBeFlushed);
         }
     }
 
@@ -377,7 +379,22 @@ public class BufferPool {
     public synchronized void flushPages(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
-
+        for (Map.Entry<PageId, Page> group : this.bufferPool.entrySet()) {
+            PageId pid = group.getKey();
+            Page pageToBeFlushed = group.getValue();
+            TransactionId holdOnTid = pageToBeFlushed.isDirty();
+            if (pageToBeFlushed != null && holdOnTid != null && holdOnTid.equals(tid)) {
+                /*
+                    此处的逻辑顺序必须严格按照如下代码执行，不可乱序
+                    即:setBeforeImage 必须在 getBeforeImage之后，
+                    logWrite必须在writePage之前，遵循 WPL
+                 */
+                Page before = pageToBeFlushed.getBeforeImage();
+                pageToBeFlushed.setBeforeImage();
+                Database.getLogFile().logWrite(tid, before, pageToBeFlushed);
+                Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pageToBeFlushed);
+            }
+        }
     }
 
     /**
@@ -431,7 +448,6 @@ public class BufferPool {
                 waitsFor.add(waitingTid);
             }
         }
-
 
         /*
            tid is waiting for the other transaction to release
