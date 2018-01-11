@@ -1,6 +1,7 @@
 
 package simpledb;
 
+import simpledb.exception.DbException;
 import simpledb.page.Page;
 import simpledb.page.pageid.PageId;
 import simpledb.transaction.TransactionId;
@@ -580,6 +581,48 @@ public class LogFile {
                             }
                         } catch (EOFException e) {
                         }
+                    }
+                } else {
+                    Map<Long, List<Page>> dirtyPages = new HashMap<>();
+                    try {
+                        while (true) {
+                            Long startOffset = raf.getFilePointer();
+                            Integer type = raf.readInt();
+                            Long record_tid = raf.readLong();
+
+                            Long curOffset = -1L;
+                            switch (type) {
+                                case BEGIN_RECORD:
+                                case ABORT_RECORD:
+                                    curOffset = raf.readLong();
+                                    dirtyPages.remove(record_tid);
+                                    this.tidToFirstLogRecord.remove(record_tid);
+                                    break;
+                                case COMMIT_RECORD:
+                                    curOffset = raf.readLong();
+                                    if (dirtyPages.get(record_tid) != null) {
+
+                                        for (Page after : dirtyPages.get(record_tid)) {
+                                            Database.getCatalog()
+                                                    .getDatabaseFile(after.getId().getTableId())
+                                                    .writePage(after);
+                                        }
+                                        dirtyPages.remove(record_tid);
+                                        this.tidToFirstLogRecord.remove(record_tid);
+                                    }
+                                    break;
+                                case UPDATE_RECORD:
+                                    Page before = readPageData(raf);
+                                    Page after = readPageData(raf);
+                                    curOffset = raf.readLong();
+                                    this.tidToFirstLogRecord.put(record_tid, startOffset);
+                                    dirtyPages.computeIfAbsent(record_tid, k -> new ArrayList<>()).add(after);
+                                    break;
+                                default:
+                                    Debug.log("Error type record! ");
+                            }
+                        }
+                    } catch (EOFException e) {
                     }
                 }
             }

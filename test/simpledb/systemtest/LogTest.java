@@ -63,16 +63,20 @@ public class LogTest extends SimpleDbTestBase {
         while (scan.hasNext()) {
             Tuple tu = scan.next();
             int x = ((IntField) tu.getField(0)).getValue();
-            if (x == v1)
+            if (x == v1) {
                 count = count + 1;
+            }
         }
         scan.close();
-        if (count > 1)
+        if (count > 1) {
             throw new RuntimeException("LogTest: tuple repeated");
-        if (present && count < 1)
+        }
+        if (present && count < 1) {
             throw new RuntimeException("LogTest: tuple missing");
-        if (present == false && count > 0)
+        }
+        if (present == false && count > 0) {
             throw new RuntimeException("LogTest: tuple present but shouldn't be");
+        }
     }
 
     // insert tuples
@@ -107,22 +111,25 @@ public class LogTest extends SimpleDbTestBase {
             throws DbException, TransactionAbortedException, IOException {
         Transaction t = new Transaction();
         t.start();
-        if (t1 != -1)
+        if (t1 != -1) {
             insertRow(hf, t, t1, 0);
-        if (t2 != -1)
+        }
+        if (t2 != -1) {
             insertRow(hf, t, t2, 0);
-        if (t1 != -1)
+        }
+        if (t1 != -1) {
             look(hf, t, t1, true);
-        if (t2 != -1)
+        }
+        if (t2 != -1) {
             look(hf, t, t2, true);
+        }
         abort(t);
     }
 
     // simulate crash
     // restart Database
     // run log recovery
-    void crash()
-            throws DbException, TransactionAbortedException, IOException {
+    void crash() throws DbException, TransactionAbortedException, IOException {
         Database.reset();
         hf1 = Utility.openHeapFile(2, file1);
         hf2 = Utility.openHeapFile(2, file2);
@@ -166,8 +173,9 @@ public class LogTest extends SimpleDbTestBase {
         Page p1 = p.getBeforeImage();
         Boolean same = Arrays.equals(p.getPageData(),
                 p1.getPageData());
-        if (same == false)
+        if (same == false) {
             throw new RuntimeException("LogTest:setBeforeImage() not called? patch failed?");
+        }
     }
 
     @Test
@@ -337,8 +345,7 @@ public class LogTest extends SimpleDbTestBase {
     }
 
     @Test
-    public void TestOpenCrash()
-            throws IOException, DbException, TransactionAbortedException {
+    public void TestOpenCrash() throws IOException, DbException, TransactionAbortedException {
         setup();
         doInsert(hf1, 1, 2);
 
