@@ -2,8 +2,8 @@ package simpledb.operator;
 
 import simpledb.BufferPool;
 import simpledb.Database;
-import simpledb.DbException;
-import simpledb.TransactionId;
+import simpledb.exception.DbException;
+import simpledb.transaction.TransactionId;
 import simpledb.Type;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.field.IntField;
@@ -28,7 +28,7 @@ public class Insert extends Operator {
     /**
      * Constructor.
      *
-     * @param t
+     * @param tid
      *            The transaction running the insert.
      * @param child
      *            The child operator from which to read tuples to be inserted.
@@ -38,10 +38,9 @@ public class Insert extends Operator {
      *             if TupleDesc of child differs from table into which we are to
      *             insert.
      */
-    public Insert(TransactionId t, OpIterator child, int tableId)
-            throws DbException {
+    public Insert(TransactionId tid, OpIterator child, int tableId) throws DbException {
         // some code goes here
-        this.transactionId = t;
+        this.transactionId = tid;
         this.children = new OpIterator[1];
         this.children[0] = child;
         this.tableId = tableId;
@@ -99,7 +98,7 @@ public class Insert extends Operator {
         int records = 0;
         while(children[0].hasNext()) {
             try {
-                Database.getBufferPool().insertTuple(new TransactionId(), this.tableId, children[0].next());
+                Database.getBufferPool().insertTuple(transactionId, this.tableId, children[0].next());
                 records++;
             } catch (IOException e) {
                 // TODO log this exception message
