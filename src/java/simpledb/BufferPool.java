@@ -367,7 +367,8 @@ public class BufferPool {
         TransactionId tid = pageToBeFlushed.isDirty();
         if (pageToBeFlushed != null && tid != null) {
             Page before = pageToBeFlushed.getBeforeImage();
-            pageToBeFlushed.setBeforeImage();
+            // flushPage本身无事务控制，不应该调用setBeforeImage
+            //pageToBeFlushed.setBeforeImage();
             Database.getLogFile().logWrite(tid, before, pageToBeFlushed);
             Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pageToBeFlushed);
         }
@@ -383,14 +384,14 @@ public class BufferPool {
             PageId pid = group.getKey();
             Page pageToBeFlushed = group.getValue();
             TransactionId holdOnTid = pageToBeFlushed.isDirty();
+            Page before = pageToBeFlushed.getBeforeImage();
+            pageToBeFlushed.setBeforeImage();
             if (pageToBeFlushed != null && holdOnTid != null && holdOnTid.equals(tid)) {
                 /*
                     此处的逻辑顺序必须严格按照如下代码执行，不可乱序
                     即:setBeforeImage 必须在 getBeforeImage之后，
                     logWrite必须在writePage之前，遵循 WPL
                  */
-                Page before = pageToBeFlushed.getBeforeImage();
-                pageToBeFlushed.setBeforeImage();
                 Database.getLogFile().logWrite(tid, before, pageToBeFlushed);
                 Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pageToBeFlushed);
             }
@@ -410,7 +411,6 @@ public class BufferPool {
             if (page.isDirty() != null) {
                 try {
                     this.flushPage(group.getKey());
-                    page.markDirty(false, new TransactionId());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

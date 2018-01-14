@@ -142,7 +142,7 @@ public class HeapFile implements DbFile {
         raf.write(pageData);
         raf.close();
 
-        page.markDirty(false, new TransactionId());
+        page.markDirty(false, null);
     }
 
     /**
