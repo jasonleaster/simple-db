@@ -80,7 +80,7 @@ public class LogTest extends SimpleDbTestBase {
     }
 
     // insert tuples
-    void doInsert(HeapFile hf, int t1, int t2)
+    void  doInsert(HeapFile hf, int t1, int t2)
             throws DbException, TransactionAbortedException, IOException {
         Transaction t = new Transaction();
         t.start();
@@ -171,8 +171,7 @@ public class LogTest extends SimpleDbTestBase {
         Page p = Database.getBufferPool().getPage(t1.getId(),
                 new HeapPageId(hf1.getId(), 0), Permissions.READ_ONLY);
         Page p1 = p.getBeforeImage();
-        Boolean same = Arrays.equals(p.getPageData(),
-                p1.getPageData());
+        Boolean same = Arrays.equals(p.getPageData(), p1.getPageData());
         if (same == false) {
             throw new RuntimeException("LogTest:setBeforeImage() not called? patch failed?");
         }
@@ -199,8 +198,7 @@ public class LogTest extends SimpleDbTestBase {
     }
 
     @Test
-    public void TestCommitCrash()
-            throws IOException, DbException, TransactionAbortedException {
+    public void TestCommitCrash() throws IOException, DbException, TransactionAbortedException {
         setup();
 
         // *** Test:
@@ -219,8 +217,7 @@ public class LogTest extends SimpleDbTestBase {
     }
 
     @Test
-    public void TestAbort()
-            throws IOException, DbException, TransactionAbortedException {
+    public void TestAbort() throws IOException, DbException, TransactionAbortedException {
         setup();
         doInsert(hf1, 1, 2);
 
@@ -240,8 +237,7 @@ public class LogTest extends SimpleDbTestBase {
     }
 
     @Test
-    public void TestAbortCommitInterleaved()
-            throws IOException, DbException, TransactionAbortedException {
+    public void TestAbortCommitInterleaved() throws IOException, DbException, TransactionAbortedException {
         setup();
         doInsert(hf1, 1, 2);
 

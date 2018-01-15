@@ -1,7 +1,6 @@
 
 package simpledb;
 
-import simpledb.exception.DbException;
 import simpledb.page.Page;
 import simpledb.page.pageid.PageId;
 import simpledb.transaction.TransactionId;
@@ -481,28 +480,33 @@ public class LogFile {
                 Long recordOffset = this.tidToFirstLogRecord.get(tid.getId());
                 if (recordOffset != null) {
                     this.raf.seek(recordOffset);
+                    Map<Long, List<Page>> dirtyPages = new HashMap<>();
+                    Map<PageId, Page> beforePages = new HashMap<>();
                     try {
                         while (true) {
                             Integer type = raf.readInt();
-                            Long record_tid = raf.readLong();
+                            Long recordTid = raf.readLong();
 
-                            if (tid.getId() != record_tid) {
+                            if (type == CHECKPOINT_RECORD) {
                                 break;
                             }
 
-                            switch (type) {
-                                case BEGIN_RECORD:
-                                    Long offset = raf.readLong();
-                                    break;
-                                case UPDATE_RECORD:
-                                    Page before = readPageData(raf);
-                                    // discard this page
-                                    Page after = readPageData(raf);
-                                    Database.getCatalog().getDatabaseFile(before.getId().getTableId()).writePage(before);
-                                    break;
+                            if (type != UPDATE_RECORD) {
+                                Long offset = raf.readLong();
+                                continue;
+                            } else {
+                                Page before = readPageData(raf);
+                                Page after = readPageData(raf);
+                                Long offset = raf.readLong();
+
+                                if (recordTid.equals(tid.getId())) {
+                                    Database.getCatalog()
+                                            .getDatabaseFile(before.getId().getTableId())
+                                            .writePage(before);
+                                }
                             }
                         }
-                    } catch (EOFException e) {
+                    } catch (IOException e) {
                     }
                 }
             }
