@@ -7,14 +7,14 @@ import org.junit.Test;
 
 import simpledb.BufferPool;
 import simpledb.Database;
-import simpledb.DbException;
-import simpledb.HeapFile;
+import simpledb.exception.DbException;
+import simpledb.dbfile.HeapFile;
 import simpledb.HeapFileEncoder;
 import simpledb.Parser;
 import simpledb.TableStats;
-import simpledb.Transaction;
-import simpledb.TransactionAbortedException;
-import simpledb.Utility;
+import simpledb.transaction.Transaction;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.util.Utility;
 
 public class QueryTest {
 	
