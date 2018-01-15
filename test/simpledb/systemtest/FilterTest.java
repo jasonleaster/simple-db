@@ -2,7 +2,14 @@ package simpledb.systemtest;
 
 import java.io.IOException;
 import static org.junit.Assert.*;
-import simpledb.*;
+
+import simpledb.dbfile.HeapFile;
+import simpledb.exception.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.operator.Filter;
+import simpledb.operator.Predicate;
+import simpledb.operator.SeqScan;
+import simpledb.transaction.TransactionId;
 
 public class FilterTest extends FilterBase {
     @Override
