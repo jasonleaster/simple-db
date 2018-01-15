@@ -1,20 +1,27 @@
 package simpledb.systemtest;
 
+import org.junit.Test;
+import simpledb.Database;
+import simpledb.dbfile.HeapFile;
+import simpledb.exception.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.transaction.Transaction;
+
 import java.io.IOException;
 
-import simpledb.*;
-
-import static org.junit.Assert.*;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class AbortEvictionTest extends SimpleDbTestBase {
-    /** Aborts a transaction and ensures that its effects were actually undone.
+    /**
+     * Aborts a transaction and ensures that its effects were actually undone.
      * This requires dirty pages to <em>not</em> get flushed to disk.
      */
-    @Test public void testDoNotEvictDirtyPages()
+    @Test
+    public void testDoNotEvictDirtyPages()
             throws IOException, DbException, TransactionAbortedException {
         // Allocate a file with ~10 pages of data
-        HeapFile f = SystemTestUtil.createRandomHeapFile(2, 512*10, null, null);
+        HeapFile f = SystemTestUtil.createRandomHeapFile(2, 512 * 10, null, null);
         Database.resetBufferPool(2);
 
         // BEGIN TRANSACTION
@@ -38,7 +45,9 @@ public class AbortEvictionTest extends SimpleDbTestBase {
         t.commit();
     }
 
-    /** Make test compatible with older version of ant. */
+    /**
+     * Make test compatible with older version of ant.
+     */
     public static junit.framework.Test suite() {
         return new junit.framework.JUnit4TestAdapter(AbortEvictionTest.class);
     }
