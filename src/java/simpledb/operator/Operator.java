@@ -1,6 +1,6 @@
 package simpledb.operator;
 
-import simpledb.DbException;
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
@@ -21,11 +21,13 @@ public abstract class Operator implements OpIterator {
     private int estimatedCardinality = 0;
 
     public boolean hasNext() throws DbException, TransactionAbortedException {
-        if (!this.open)
+        if (!this.open) {
             throw new IllegalStateException("Operator not yet open");
+        }
         
-        if (next == null)
+        if (next == null) {
             next = fetchNext();
+        }
         return next != null;
     }
 
