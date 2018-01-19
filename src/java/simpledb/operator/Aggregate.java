@@ -1,5 +1,6 @@
 package simpledb.operator;
 
+import simpledb.Type;
 import simpledb.exception.DbException;
 import simpledb.aggregator.Aggregator;
 import simpledb.aggregator.IntegerAggregator;
@@ -24,6 +25,8 @@ public class Aggregate extends Operator {
     private int afield;
     private int gfield;
     private Aggregator.Op aop;
+    private Aggregator aggregator;
+    private OpIterator opIterator;
 
     /**
      * Constructor.
@@ -46,6 +49,12 @@ public class Aggregate extends Operator {
         this.afield = afield;
         this.gfield = gfield;
         this.aop = aop;
+
+        if (this.getTupleDesc().getFieldType(afield) == Type.INT_TYPE) {
+            this.aggregator = new IntegerAggregator(gfield, this.tupleDesc.getFieldType(gfield), afield, this.aop);
+        } else {
+            this.aggregator = new StringAggregator(gfield, this.tupleDesc.getFieldType(gfield), afield, this.aop);
+        }
     }
 
     /**
@@ -104,6 +113,12 @@ public class Aggregate extends Operator {
         // some code goes here
         super.open();
         this.children[0].open();
+        while (children[0].hasNext()) {
+            Tuple nextTuple = children[0].next();
+            aggregator.mergeTupleIntoGroup(nextTuple);
+        }
+        this.opIterator = aggregator.iterator();
+        this.opIterator.open();
     }
 
     /**
@@ -115,16 +130,18 @@ public class Aggregate extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if (children[0].hasNext()) {
-            return children[0].next();
+        if (this.opIterator.hasNext()) {
+            return this.opIterator.next();
         } else {
             return null;
         }
+
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
         this.children[0].rewind();
+        this.opIterator.rewind();
     }
 
     /**
@@ -147,6 +164,7 @@ public class Aggregate extends Operator {
         // some code goes here
         super.close();
         this.children[0].close();
+        this.opIterator.close();
     }
 
     @Override
