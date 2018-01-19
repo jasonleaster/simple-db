@@ -21,6 +21,8 @@ public class IntegerAggregator implements Aggregator {
 
     private static final long serialVersionUID = 1L;
 
+    private static final IntField EMPTY_FIELD = new IntField(-1);
+
     private int gbField;
     private Type gbFieldType;
     private int aField;
@@ -70,13 +72,22 @@ public class IntegerAggregator implements Aggregator {
         this.totalSum    = new ConcurrentHashMap<>();
         this.results = new ConcurrentHashMap<>();
 
-        Type[] types = new Type[2];
-        String[] names = new String[2];
-        types[0] = Type.INT_TYPE;
-        types[1] = Type.INT_TYPE;
-        names[0] = "groupVal";
-        names[1] = "aggregateVal";
-        this.tupleDescForAggregatorResult = new TupleDesc(types, names);
+        if (this.gbField >= 0) {
+            Type[] types = new Type[2];
+            String[] names = new String[2];
+            types[0] = Type.INT_TYPE;
+            types[1] = Type.INT_TYPE;
+            names[0] = "groupVal";
+            names[1] = "aggregateVal";
+            this.tupleDescForAggregatorResult = new TupleDesc(types, names);
+        } else {
+            Type[] types = new Type[1];
+            String[] names = new String[1];
+            types[0] = Type.INT_TYPE;
+            names[0] = "aggregateVal";
+            this.tupleDescForAggregatorResult = new TupleDesc(types, names);
+        }
+
     }
 
     /**
@@ -89,12 +100,17 @@ public class IntegerAggregator implements Aggregator {
     public void mergeTupleIntoGroup(Tuple tuple) {
         // some code goes here
 
-        Field curGrpByField = tuple.getField(this.gbField);
-        IntField curAgField = (IntField) tuple.getField(this.aField);
-
-        if (curGrpByField.getType() != this.gbFieldType) {
-            return;
+        Field curGrpByField;
+        if (this.gbField < 0) {
+            curGrpByField = EMPTY_FIELD;
+        } else {
+            curGrpByField = tuple.getField(this.gbField);
+            if (curGrpByField.getType() != this.gbFieldType) {
+                return;
+            }
         }
+
+        IntField curAgField = (IntField) tuple.getField(this.aField);
 
         if (totalSum.containsKey(curGrpByField)) {
             totalSum.put(curGrpByField, totalSum.get(curGrpByField) + curAgField.getValue());
@@ -116,7 +132,9 @@ public class IntegerAggregator implements Aggregator {
             }
         } else {
             Tuple preResult = this.results.get(curGrpByField);
-            IntField preAgField = (IntField) preResult.getField(1);
+            // 拿到一个字段，即Aggregate的值
+            final int indexForAgVal = preResult.getTupleDesc().numFields() - 1;
+            IntField preAgField = (IntField) preResult.getField(indexForAgVal);
             switch (what){
                 case MAX:
                     after = preAgField.getValue() < curAgField.getValue() ? curAgField : preAgField;
@@ -142,9 +160,16 @@ public class IntegerAggregator implements Aggregator {
 
         if (after != null) {
             Tuple history = new Tuple(this.tupleDescForAggregatorResult);
-            history.setField(0, curGrpByField);
-            history.setField(1, after);
-            this.results.put(curGrpByField, history);
+            if (this.gbField >= 0) {
+
+                history.setField(0, curGrpByField);
+                history.setField(1, after);
+                this.results.put(curGrpByField, history);
+            } else {
+                history.setField(0, after);
+                this.results.put(curGrpByField, history);
+            }
+
         }
     }
 

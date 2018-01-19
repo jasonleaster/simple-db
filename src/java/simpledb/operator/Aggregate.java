@@ -9,6 +9,7 @@ import simpledb.exception.TransactionAbortedException;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
+import java.lang.reflect.Field;
 import java.util.NoSuchElementException;
 
 /**
@@ -50,10 +51,18 @@ public class Aggregate extends Operator {
         this.gfield = gfield;
         this.aop = aop;
 
+        Type fieldType;
+        try {
+            fieldType = this.tupleDesc.getFieldType(gfield);
+        } catch (NoSuchElementException e) {
+            fieldType = null;
+        }
+
+
         if (this.getTupleDesc().getFieldType(afield) == Type.INT_TYPE) {
-            this.aggregator = new IntegerAggregator(gfield, this.tupleDesc.getFieldType(gfield), afield, this.aop);
+            this.aggregator = new IntegerAggregator(gfield, fieldType, afield, this.aop);
         } else {
-            this.aggregator = new StringAggregator(gfield, this.tupleDesc.getFieldType(gfield), afield, this.aop);
+            this.aggregator = new StringAggregator(gfield, fieldType, afield, this.aop);
         }
     }
 
