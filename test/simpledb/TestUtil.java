@@ -1,5 +1,22 @@
 package simpledb;
 
+import simpledb.dbfile.DbFile;
+import simpledb.dbfile.DbFileIterator;
+import simpledb.dbfile.HeapFile;
+import simpledb.exception.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.field.Field;
+import simpledb.field.IntField;
+import simpledb.field.StringField;
+import simpledb.operator.OpIterator;
+import simpledb.page.Page;
+import simpledb.page.pageid.PageId;
+import simpledb.transaction.TransactionId;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
+import simpledb.tuple.TupleIterator;
+import simpledb.util.Utility;
+
 import java.io.*;
 import java.util.*;
 
@@ -69,7 +86,7 @@ public class TestUtil {
                 Field f;
                 Object t = tupdata[i++];
                 if (t instanceof String)
-                    f = new StringField((String)t, Type.STRING_LEN); 
+                    f = new StringField((String)t, Type.STRING_LEN);
                 else
                     f = new IntField((Integer)t);
 
@@ -108,7 +125,7 @@ public class TestUtil {
      */
     public static void compareDbIterators(OpIterator expected, OpIterator actual)
             throws DbException, TransactionAbortedException {
-        while (expected.hasNext()) {
+        for (int i = 0; expected.hasNext(); i++) {
             assertTrue(actual.hasNext());
 
             Tuple expectedTup = expected.next();
@@ -135,7 +152,7 @@ public class TestUtil {
             matched = false;
             actual.rewind();
 
-            while (actual.hasNext()) {
+            for (int i = 0; actual.hasNext(); i++) {
                 Tuple next = actual.next();
                 if (compareTuples(expectedTup, next)) {
                     matched = true;

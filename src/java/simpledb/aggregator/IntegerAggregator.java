@@ -75,7 +75,7 @@ public class IntegerAggregator implements Aggregator {
         if (this.gbField >= 0) {
             Type[] types = new Type[2];
             String[] names = new String[2];
-            types[0] = Type.INT_TYPE;
+            types[0] = this.gbFieldType;
             types[1] = Type.INT_TYPE;
             names[0] = "groupVal";
             names[1] = "aggregateVal";
