@@ -1,23 +1,32 @@
 package simpledb.systemtest;
 
+import org.junit.Test;
+import simpledb.Database;
+import simpledb.dbfile.HeapFile;
+import simpledb.exception.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.field.IntField;
+import simpledb.operator.Insert;
+import simpledb.operator.SeqScan;
+import simpledb.transaction.TransactionId;
+import simpledb.tuple.Tuple;
+
 import java.io.IOException;
 import java.util.ArrayList;
-import simpledb.*;
 
 import static org.junit.Assert.*;
-import org.junit.Test;
 
 public class InsertTest extends SimpleDbTestBase {
     private void validateInsert(int columns, int sourceRows, int destinationRows)
-                throws DbException, IOException, TransactionAbortedException {
+            throws DbException, IOException, TransactionAbortedException {
         // Create the two tables
-        ArrayList<ArrayList<Integer>> sourceTuples = new ArrayList<ArrayList<Integer>>();
-        HeapFile source = SystemTestUtil.createRandomHeapFile(
-                columns, sourceRows, null, sourceTuples);
+        ArrayList<ArrayList<Integer>> sourceTuples = new ArrayList<>();
+        HeapFile source = SystemTestUtil.createRandomHeapFile(columns, sourceRows, null, sourceTuples);
+
         assert sourceTuples.size() == sourceRows;
+
         ArrayList<ArrayList<Integer>> destinationTuples = new ArrayList<ArrayList<Integer>>();
-        HeapFile destination = SystemTestUtil.createRandomHeapFile(
-                columns, destinationRows, null, destinationTuples);
+        HeapFile destination = SystemTestUtil.createRandomHeapFile(columns, destinationRows, null, destinationTuples);
         assert destinationTuples.size() == destinationRows;
 
         // Insert source into destination
@@ -48,27 +57,29 @@ public class InsertTest extends SimpleDbTestBase {
         SystemTestUtil.matchTuples(destination, sourceTuples);
     }
 
-    @Test public void testEmptyToEmpty()
-            throws IOException, DbException, TransactionAbortedException {
+    @Test
+    public void testEmptyToEmpty() throws IOException, DbException, TransactionAbortedException {
         validateInsert(3, 0, 0);
     }
 
-    @Test public void testEmptyToOne()
-            throws IOException, DbException, TransactionAbortedException {
+    @Test
+    public void testEmptyToOne() throws IOException, DbException, TransactionAbortedException {
         validateInsert(8, 0, 1);
     }
 
-    @Test public void testOneToEmpty()
-            throws IOException, DbException, TransactionAbortedException {
+    @Test
+    public void testOneToEmpty() throws IOException, DbException, TransactionAbortedException {
         validateInsert(3, 1, 0);
     }
 
-    @Test public void testOneToOne()
-            throws IOException, DbException, TransactionAbortedException {
+    @Test
+    public void testOneToOne() throws IOException, DbException, TransactionAbortedException {
         validateInsert(1, 1, 1);
     }
 
-    /** Make test compatible with older version of ant. */
+    /**
+     * Make test compatible with older version of ant.
+     */
     public static junit.framework.Test suite() {
         return new junit.framework.JUnit4TestAdapter(InsertTest.class);
     }

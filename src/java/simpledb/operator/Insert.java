@@ -24,6 +24,7 @@ public class Insert extends Operator {
     private final int tableId;
     private final TupleDesc tupleDesc;
     private OpIterator[] children;
+    private boolean hasNoMoreElements;
 
     /**
      * Constructor.
@@ -50,6 +51,7 @@ public class Insert extends Operator {
         types[0] = Type.INT_TYPE;
         names[0] = "returnRecords";
         this.tupleDesc = new TupleDesc(types, names);
+        this.hasNoMoreElements = false;
     }
 
     public TupleDesc getTupleDesc() {
@@ -61,12 +63,14 @@ public class Insert extends Operator {
         // some code goes here
         super.open();
         children[0].open();
+        this.hasNoMoreElements = false;
     }
 
     public void close() {
         // some code goes here
         super.close();
         children[0].close();
+        this.hasNoMoreElements = true;
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
@@ -90,7 +94,7 @@ public class Insert extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if (!children[0].hasNext()) {
+        if (hasNoMoreElements) {
             return null;
         }
 
@@ -106,7 +110,7 @@ public class Insert extends Operator {
             }
         }
         insertResult.setField(0, new IntField(records));
-
+        this.hasNoMoreElements = true;
         return insertResult;
     }
 
