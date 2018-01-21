@@ -103,10 +103,18 @@ public class IntHistogram {
         double selectivity = 0.0;
         switch (op) {
             case EQUALS:
-                selectivity = counts * 1.0 / totalCounts;
+                if (v < min || v > max) {
+                    return 0.0;
+                } else {
+                    selectivity = counts * 1.0 / totalCounts;
+                }
                 break;
             case NOT_EQUALS:
-                selectivity = (totalCounts - counts) * 1.0 / totalCounts;
+                if (v < min || v > max) {
+                    return 1.0;
+                } else {
+                    selectivity = (totalCounts - counts) * 1.0 / totalCounts;
+                }
                 break;
             case GREATER_THAN:
                 if (v > max) {
