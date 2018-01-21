@@ -1,10 +1,20 @@
 package simpledb.systemtest;
 
-import static org.junit.Assert.*;
+import simpledb.dbfile.HeapFile;
+import simpledb.exception.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.field.IntField;
+import simpledb.operator.Delete;
+import simpledb.operator.Filter;
+import simpledb.operator.Predicate;
+import simpledb.operator.SeqScan;
+import simpledb.transaction.TransactionId;
+import simpledb.tuple.Tuple;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import simpledb.*;
+
+import static org.junit.Assert.*;
 
 public class DeleteTest extends FilterBase {
     ArrayList<ArrayList<Integer>> expectedTuples = null;
@@ -51,7 +61,9 @@ public class DeleteTest extends FilterBase {
         SystemTestUtil.matchTuples(table, expectedTuples);
     }
 
-    /** Make test compatible with older version of ant. */
+    /**
+     * Make test compatible with older version of ant.
+     */
     public static junit.framework.Test suite() {
         return new junit.framework.JUnit4TestAdapter(DeleteTest.class);
     }
