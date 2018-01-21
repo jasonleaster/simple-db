@@ -1,7 +1,16 @@
 simple-db
 =========
 
-Code for all 6.830 labs will be available in this repo. Once you have set up your class repo, you pull lab code from here.
+Declaration:
+
+My solutions for 6.830 labs. PLEASE DON'T COPY MY SOLUTION.
+I posted my implementation ONLY FOR exchanging the idea how to do it in more smarter way,
+but not for your answer of this awesome course.
+
+声明:
+
+与6.828类似，这是我完成的6.830 simple-db 重构后的代码(部分目录结构和实现风格)，请勿抄袭，仅供技术交流用。
+衷心感谢MIT能够提供如此棒的课程资源
 
 Directions for Repo Setup
 -------------------------

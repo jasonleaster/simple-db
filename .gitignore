@@ -2,4 +2,4 @@
 .project
 bin/
 dist/
-log
+*.iml
