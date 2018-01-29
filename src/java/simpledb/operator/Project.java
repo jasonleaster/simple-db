@@ -1,5 +1,6 @@
 package simpledb;
 
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.operator.OpIterator;
 import simpledb.operator.Operator;
