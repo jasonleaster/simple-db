@@ -10,11 +10,13 @@ public class TransactionId implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    static AtomicLong counter = new AtomicLong(0);
-    final long myid;
+    private static AtomicLong counter = new AtomicLong(0);
+    private final long myid;
+    private final long startTimestamp;
 
     public TransactionId() {
         myid = counter.getAndIncrement();
+        startTimestamp = System.currentTimeMillis();
     }
 
     public long getId() {
@@ -42,4 +44,8 @@ public class TransactionId implements Serializable {
 		result = prime * result + (int) (myid ^ (myid >>> 32));
 		return result;
 	}
+
+    public long getStartTimestamp() {
+        return startTimestamp;
+    }
 }

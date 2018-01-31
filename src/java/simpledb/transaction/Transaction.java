@@ -11,7 +11,7 @@ import java.io.*;
 
 public class Transaction {
     private final TransactionId tid;
-    volatile boolean started = false;
+    private volatile boolean started = false;
 
     public Transaction() {
         tid = new TransactionId();
