@@ -80,15 +80,13 @@ public class SeqScan implements OpIterator {
      *                   tableAlias.null, or null.null).
      */
     public void reset(int tableid, String tableAlias) {
-        // some code goes here
         this.tableId = tableid;
         this.tableAlias = tableAlias;
     }
 
 
-
+    @Override
     public void open() throws DbException, TransactionAbortedException {
-        // some code goes here
         dbFileIterator.open();
     }
 
@@ -102,30 +100,31 @@ public class SeqScan implements OpIterator {
      * @return the TupleDesc with field names from the underlying HeapFile,
      * prefixed with the tableAlias string from the constructor.
      */
+    @Override
     public TupleDesc getTupleDesc() {
-        // some code goes here
         return Database.getCatalog().getTupleDesc(this.tableId);
     }
 
+    @Override
     public boolean hasNext() throws TransactionAbortedException, DbException {
-        // some code goes here
         return dbFileIterator.hasNext();
     }
 
+    @Override
     public Tuple next() throws NoSuchElementException,
             TransactionAbortedException, DbException {
         // some code goes here
         return dbFileIterator.next();
     }
 
+    @Override
     public void close() {
-        // some code goes here
         dbFileIterator.close();
     }
 
+    @Override
     public void rewind() throws DbException, NoSuchElementException,
             TransactionAbortedException {
-        // some code goes here
         dbFileIterator.rewind();
     }
 }

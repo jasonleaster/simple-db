@@ -97,6 +97,7 @@ public class Tuple implements Serializable {
      *
      * where \t is any whitespace (except a newline)
      */
+    @Override
     public String toString() {
         // some code goes here
         // throw new UnsupportedOperationException("Implement this");
@@ -105,7 +106,7 @@ public class Tuple implements Serializable {
         int i = 0;
         while (tdItems.hasNext()) {
             TupleDesc.TDItem item = tdItems.next();
-            stringBuilder.append(item.fieldName);
+            stringBuilder.append(item.getFieldName());
             stringBuilder.append(i);
             stringBuilder.append("\n");
 
@@ -129,7 +130,6 @@ public class Tuple implements Serializable {
      * */
     public void resetTupleDesc(TupleDesc td)
     {
-        // some code goes here
         initFields(td);
     }
 

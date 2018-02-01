@@ -11,6 +11,7 @@ public abstract class AbstractDbFileIterator implements DbFileIterator {
 
     private Tuple next = null;
 
+    @Override
 	public boolean hasNext() throws DbException, TransactionAbortedException {
         if (next == null) {
             next = readNext();
@@ -18,11 +19,14 @@ public abstract class AbstractDbFileIterator implements DbFileIterator {
         return next != null;
     }
 
+    @Override
     public Tuple next() throws DbException, TransactionAbortedException,
             NoSuchElementException {
         if (next == null) {
             next = readNext();
-            if (next == null) throw new NoSuchElementException();
+            if (next == null) {
+                throw new NoSuchElementException();
+            }
         }
 
         Tuple result = next;
@@ -31,6 +35,7 @@ public abstract class AbstractDbFileIterator implements DbFileIterator {
     }
 
     /** If subclasses override this, they should call super.close(). */
+    @Override
     public void close() {
         // Ensures that a future call to next() will fail
         next = null;

@@ -506,7 +506,7 @@ public class LogFile {
                                 }
                             }
                         }
-                    } catch (IOException e) {
+                    } catch (EOFException e) {
                     }
                 }
             }

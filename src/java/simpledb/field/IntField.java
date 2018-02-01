@@ -28,18 +28,22 @@ public class IntField implements Field {
         value = i;
     }
 
+    @Override
     public String toString() {
         return Integer.toString(value);
     }
 
+    @Override
     public int hashCode() {
         return value;
     }
 
+    @Override
     public boolean equals(Object field) {
         return ((IntField) field).value == value;
     }
 
+    @Override
     public void serialize(DataOutputStream dos) throws IOException {
         dos.writeInt(value);
     }
@@ -51,6 +55,7 @@ public class IntField implements Field {
      * @throws IllegalCastException if val is not an IntField
      * @see Field#compare
      */
+    @Override
     public boolean compare(Predicate.Op op, Field val) {
 
         IntField iVal = (IntField) val;
@@ -60,24 +65,19 @@ public class IntField implements Field {
                 return value == iVal.value;
             case NOT_EQUALS:
                 return value != iVal.value;
-
             case GREATER_THAN:
                 return value > iVal.value;
-
             case GREATER_THAN_OR_EQ:
                 return value >= iVal.value;
-
             case LESS_THAN:
                 return value < iVal.value;
-
             case LESS_THAN_OR_EQ:
                 return value <= iVal.value;
-
             case LIKE:
                 return value == iVal.value;
+            default:
+                return false;
         }
-
-        return false;
     }
 
     /**
@@ -85,6 +85,7 @@ public class IntField implements Field {
      *
      * @return Type.INT_TYPE
      */
+    @Override
     public Type getType() {
         return Type.INT_TYPE;
     }

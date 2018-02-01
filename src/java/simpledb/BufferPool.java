@@ -7,6 +7,7 @@ import simpledb.page.Page;
 import simpledb.page.pageid.PageId;
 import simpledb.transaction.Transaction;
 import simpledb.transaction.TransactionId;
+import simpledb.transaction.TransactionManager;
 import simpledb.tuple.Tuple;
 
 import java.io.IOException;
@@ -44,12 +45,6 @@ public class BufferPool {
     private final int numPages;
 
     private final Map<PageId, Page> bufferPool = new ConcurrentHashMap<>();
-
-    private final Map<PageId, List<TransactionId>> sharedLockManager = new ConcurrentHashMap<>();
-    private final Map<PageId, TransactionId> exclusiveLockManager = new ConcurrentHashMap<>();
-
-    // 等待其他锁可能有多个，一对多的关系
-    private final Map<TransactionId, List<TransactionId>> waitForGraph = new ConcurrentHashMap<>();
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -92,8 +87,12 @@ public class BufferPool {
      */
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
-        // some code goes here
         // TODO 参数校验
+
+        /*
+            对目标页面尝试落锁，否则阻塞当前线程
+         */
+        TransactionManager.getInstance().tryToAcquireLockOnThePage(tid, pid, perm);
 
         Page page = bufferPool.get(pid);
         if (page == null) {
@@ -107,58 +106,9 @@ public class BufferPool {
             }
         }
 
-        // 设置该锁对应的权限
-        if (perm == Permissions.READ_ONLY) {
-            while (true) {
-                synchronized (exclusiveLockManager) {
-                    TransactionId exclusiveLock = exclusiveLockManager.get(pid);
-                    boolean haveExclusiveLock = exclusiveLock != null;
-                    // 已有排它锁受到阻塞
-                    if (haveExclusiveLock && !exclusiveLock.equals(tid)) {
-                        this.dealWithDeadLock(pid, tid, perm);
-
-                        Thread.yield();
-                    } else {
-                        // 设置共享锁
-                        List<TransactionId> sharedTransactions = sharedLockManager.computeIfAbsent(pid, k -> new ArrayList<>());
-                        // 避免重复添加共享锁
-                        if (!sharedTransactions.contains(tid)) {
-                            sharedTransactions.add(tid);
-                        }
-                        break;
-                    }
-                }
-            }
-        } else {
-            while (true) {
-                synchronized (exclusiveLockManager) {
-                    List<TransactionId> sharedTransactions = sharedLockManager.get(pid);
-                    boolean haveSharedLock = sharedTransactions != null && sharedTransactions.size() > 0;
-                    // 已有共享锁受到阻塞
-                    if (haveSharedLock && !sharedTransactions.contains(tid)) {
-                        this.dealWithDeadLock(pid, tid, perm);
-
-                        Thread.yield();
-                    } else {
-                        // 考虑锁升级的情况
-                        if (haveSharedLock && sharedTransactions.contains(tid)) {
-                            sharedTransactions.remove(tid);
-                        }
-                        TransactionId oldTid = exclusiveLockManager.get(pid);
-                        boolean haveExclusiveLock = oldTid != null;
-                        if (haveExclusiveLock && !oldTid.equals(tid)) {
-                            this.dealWithDeadLock(pid, tid, perm);
-
-                            Thread.yield();
-                        } else {
-                            // 设置排它锁
-                            exclusiveLockManager.put(pid, tid);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+        /*
+            只能返回本事务内的脏页，否则必须返回干净页
+         */
         return page;
     }
 
@@ -166,20 +116,7 @@ public class BufferPool {
      * Return true if the specified transaction has a lock on the specified page
      */
     public boolean holdsLock(TransactionId tid, PageId p) {
-        // some code goes here
-        // not necessary for lab1|lab2
-        // 首先检查排它锁
-        if (this.exclusiveLockManager.get(p).equals(tid)) {
-            return true;
-        } else {
-            // 查看是否有共享锁
-            List<TransactionId> sharedTransactions = this.sharedLockManager.get(p);
-            if (sharedTransactions != null && sharedTransactions.contains(tid)) {
-                return true;
-            }
-
-            return false;
-        }
+        return TransactionManager.getInstance().holdsLock(tid, p);
     }
 
     /**
@@ -192,19 +129,7 @@ public class BufferPool {
      * @param pid the ID of the page to unlock
      */
     public void releasePage(TransactionId tid, PageId pid) {
-        // some code goes here
-        // not necessary for lab1|lab2
-        if (pid == null || tid == null) {
-            return;
-        }
-
-        synchronized (exclusiveLockManager) {
-            this.exclusiveLockManager.remove(pid);
-            List<TransactionId> sharedTransactions = this.sharedLockManager.get(pid);
-            if (sharedTransactions != null) {
-                sharedTransactions.remove(tid);
-            }
-        }
+        TransactionManager.getInstance().releasePage(tid, pid);
     }
 
     /**
@@ -213,8 +138,6 @@ public class BufferPool {
      * @param tid the ID of the transaction requesting the unlock
      */
     public void transactionComplete(TransactionId tid) throws IOException {
-        // some code goes here
-        // not necessary for lab1|lab2
         this.transactionComplete(tid, true);
     }
 
@@ -225,30 +148,17 @@ public class BufferPool {
      * @param tid    the ID of the transaction requesting the unlock
      * @param commit a flag indicating whether we should commit or abort
      */
-    public void transactionComplete(TransactionId tid, boolean commit)
-            throws IOException {
-        // some code goes here
-        // not necessary for lab1|lab2
-        synchronized (exclusiveLockManager) {
-
-            for (Map.Entry<PageId, TransactionId> group : exclusiveLockManager.entrySet()) {
-                if (group.getValue() != null && group.getValue().equals(tid)) {
-                    exclusiveLockManager.remove(group.getKey());
-                }
-            }
-
-            for (Map.Entry<PageId, List<TransactionId>> group : sharedLockManager.entrySet()) {
-                if (group.getValue() != null && group.getValue().size() > 0) {
-                    List<TransactionId> sharedTids = group.getValue();
-                    sharedTids.remove(tid);
-                }
-            }
-
-            if (commit) {
-                flushPages(tid);
-            } else {
-                for (Map.Entry<PageId, Page> group : bufferPool.entrySet()) {
+    public void transactionComplete(TransactionId tid, boolean commit) throws IOException {
+        if (commit) {
+            flushPages(tid);
+        } else {
+            for (Map.Entry<PageId, Page> group : bufferPool.entrySet()) {
+                Page page = group.getValue();
+                if (tid.equals(page.isDirty())) {
                     discardPage(group.getKey());
+                    this.releasePage(tid, page.getId());
+
+                    assert !this.holdsLock(tid, page.getId());
                 }
             }
         }
@@ -271,8 +181,7 @@ public class BufferPool {
      */
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
+
         ArrayList<Page> dirtyPages = Database.getCatalog().getDatabaseFile(tableId)
                 .insertTuple(tid, t);
 
@@ -378,15 +287,14 @@ public class BufferPool {
      * Write all pages of the specified transaction to disk.
      */
     public synchronized void flushPages(TransactionId tid) throws IOException {
-        // some code goes here
-        // not necessary for lab1|lab2
+
         for (Map.Entry<PageId, Page> group : this.bufferPool.entrySet()) {
             PageId pid = group.getKey();
             Page pageToBeFlushed = group.getValue();
             TransactionId holdOnTid = pageToBeFlushed.isDirty();
             Page before = pageToBeFlushed.getBeforeImage();
             pageToBeFlushed.setBeforeImage();
-            if (pageToBeFlushed != null && holdOnTid != null && holdOnTid.equals(tid)) {
+            if (holdOnTid != null && holdOnTid.equals(tid)) {
                 /*
                     此处的逻辑顺序必须严格按照如下代码执行，不可乱序
                     即:setBeforeImage 必须在 getBeforeImage之后，
@@ -394,6 +302,13 @@ public class BufferPool {
                  */
                 Database.getLogFile().logWrite(tid, before, pageToBeFlushed);
                 Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pageToBeFlushed);
+
+                /*
+                    落盘后，释放事务在这个页上面的锁
+                 */
+                this.releasePage(tid, pid);
+
+                assert !this.holdsLock(tid, pid);
             }
         }
     }
@@ -403,106 +318,63 @@ public class BufferPool {
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
     private synchronized void evictPage() throws DbException {
-        // some code goes here
-        // not necessary for lab1
 
         for (Map.Entry<PageId, Page> group : bufferPool.entrySet()) {
             Page page = group.getValue();
-            if (page.isDirty() != null) {
-                try {
-                    this.flushPage(group.getKey());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            if (page.isDirty() == null) {
+                bufferPool.remove(group.getKey());
+                return;
             }
-            bufferPool.remove(group.getKey());
-            return;
         }
+
+        throw new DbException("Can't evict pages! All pages are dirty!");
     }
 
-    private void dealWithDeadLock(PageId pid, TransactionId tid, Permissions perm) {
 
-        TransactionId exclusiveLock = exclusiveLockManager.get(pid);
-        boolean haveExclusiveLock = exclusiveLock != null;
-
-        List<TransactionId> sharedTransactions = sharedLockManager.get(pid);
-        boolean haveSharedLock = sharedTransactions != null && sharedTransactions.size() > 0;
-
-        List<TransactionId> waitingTids = new ArrayList<>();
-        if (haveExclusiveLock) {
-            waitingTids.add(exclusiveLock);
-        }
-
-        if (perm == Permissions.READ_WRITE) {
-            if (haveSharedLock) {
-                waitingTids.addAll(sharedTransactions);
-            }
-        }
-
-        /*
-         *  wait all these tid to finished
-         */
-        List<TransactionId> waitsFor = this.waitForGraph.computeIfAbsent(tid, k -> new ArrayList<>());
-        for (TransactionId waitingTid : waitingTids) {
-            if (!waitsFor.contains(waitingTid)) {
-                waitsFor.add(waitingTid);
-            }
-        }
-
-        /*
-           tid is waiting for the other transaction to release
-           the exclusive lock on the page
-         */
-        // dead lock checking
-        if (this.isDeadLockTransaction(tid)) {
-            // break the dead locking
-            try {
-                this.transactionComplete(tid, false);
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println("Abort Dead lock failed!! This shouldn't happen");
-            }
-        }
-    }
-
-    /**
-     * Check if there have dead lock in the transaction waiting graph.
-     *
-     * @param tid TransactionId
-     * @return return true if there have dead lock
-     */
-    private boolean isDeadLockTransaction(TransactionId tid) {
-        List<TransactionId> targets = this.waitForGraph.get(tid);
-
-        if (targets == null || targets.size() == 0) {
-            return false;
-        } else {
-            List<TransactionId> waitingList = new ArrayList<>();
-            waitingList.add(tid);
-            // 类似于广度优先搜索
-            while (true) {
-                boolean noChild = true;
-                List<TransactionId> nextTargets = new ArrayList<>();
-                for (TransactionId target : targets) {
-                    List<TransactionId> waitFor = this.waitForGraph.get(target);
-
-                    if (waitFor != null && waitFor.size() > 0) {
-                        if (waitingList.contains(target)) {
-                            return true;
-                        } else {
-                            noChild = false;
-                            nextTargets.addAll(waitFor);
-                            waitingList.addAll(waitFor);
-                        }
-                    }
-                }
-                if (noChild) {
-                    return false;
-                } else {
-                    targets = nextTargets;
-                }
-            }
-        }
-    }
+//    private void dealWithDeadLock(PageId pid, TransactionId tid, Permissions perm) throws TransactionAbortedException {
+//
+//        TransactionId exclusiveLock = exclusiveLockManager.get(pid);
+//        boolean haveExclusiveLock = exclusiveLock != null;
+//
+//        List<TransactionId> sharedTransactions = sharedLockManager.get(pid);
+//        boolean haveSharedLock = sharedTransactions != null && sharedTransactions.size() > 0;
+//
+//        List<TransactionId> waitingTids = new ArrayList<>();
+//        if (haveExclusiveLock) {
+//            waitingTids.add(exclusiveLock);
+//        }
+//
+//        if (perm == Permissions.READ_WRITE) {
+//            if (haveSharedLock) {
+//                waitingTids.addAll(sharedTransactions);
+//            }
+//        }
+//
+//        /*
+//         *  wait all these tid to finished
+//         */
+//        List<TransactionId> waitsFor = this.waitForGraph.computeIfAbsent(tid, k -> new ArrayList<>());
+//        for (TransactionId waitingTid : waitingTids) {
+//            if (!waitsFor.contains(waitingTid)) {
+//                waitsFor.add(waitingTid);
+//            }
+//        }
+//
+//        /*
+//           tid is waiting for the other transaction to release
+//           the exclusive lock on the page
+//         */
+//        // dead lock checking || timeOutTransaction(tid)
+//        if (this.isDeadLockTransaction(tid)) {
+//            // break the dead locking
+//            try {
+//                tid.getTransaction().abort();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                Debug.log("Abort Dead lock failed!! This shouldn't happen");
+//            }
+//            throw new TransactionAbortedException();
+//        }
+//    }
 
 }

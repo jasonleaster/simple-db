@@ -27,20 +27,29 @@ public class TupleDesc implements Serializable {
         /**
          * The type of the field
          * */
-        public final Type fieldType;
+        private final Type fieldType;
         
         /**
          * The name of the field
          * */
-        public final String fieldName;
+        private final String fieldName;
 
-        public TDItem(Type t, String n) {
+        TDItem(Type t, String n) {
             this.fieldName = n;
             this.fieldType = t;
         }
 
+        @Override
         public String toString() {
             return fieldName + "(" + fieldType + ")";
+        }
+
+        public Type getFieldType() {
+            return fieldType;
+        }
+
+        public String getFieldName() {
+            return fieldName;
         }
     }
 
@@ -220,6 +229,7 @@ public class TupleDesc implements Serializable {
      * @return true if the object is equal to this TupleDesc.
      */
 
+    @Override
     public boolean equals(Object o) {
         // some code goes here
         if (!(o instanceof  TupleDesc)) {
@@ -240,6 +250,7 @@ public class TupleDesc implements Serializable {
         return true;
     }
 
+    @Override
     public int hashCode() {
         // If you want to use TupleDesc as keys for HashMap, implement this so
         // that equal objects have equals hashCode() results
@@ -258,6 +269,7 @@ public class TupleDesc implements Serializable {
      * 
      * @return String describing this descriptor.
      */
+    @Override
     public String toString() {
         // some code goes here
         StringBuilder stringBuilder = new StringBuilder();

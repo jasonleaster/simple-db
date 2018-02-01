@@ -1,14 +1,13 @@
 package simpledb.transaction;
 
+import simpledb.Database;
 import simpledb.Debug;
 import simpledb.Permissions;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.page.pageid.PageId;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -30,7 +29,7 @@ public class TransactionManager {
     /**
      * 页面共享锁管理器
      */
-    private final Map<PageId, List<TransactionId>> sharedLockManager = new ConcurrentHashMap<>();
+    private final Map<PageId, Set<TransactionId>> sharedLockManager = new ConcurrentHashMap<>();
 
     /**
      * 页面排它锁管理器
@@ -40,21 +39,28 @@ public class TransactionManager {
     /**
      * 等待其他锁可能有多个，一对多的关系
      */
-    private final Map<TransactionId, List<TransactionId>> waitForGraph = new ConcurrentHashMap<>();
+    private final Map<TransactionId, Set<TransactionId>> waitForGraph = new ConcurrentHashMap<>();
 
     public static TransactionManager getInstance() {
         return INSTANCE;
     }
 
     public void tryToAcquireLockOnThePage(TransactionId tid, PageId pid, Permissions perm) throws TransactionAbortedException {
+
+        /*
+            尝试获取共享锁
+         */
         if (perm == Permissions.READ_ONLY) {
             while (true) {
-
                 synchronized (exclusiveLockManager) {
                     TransactionId exclusiveLock = exclusiveLockManager.get(pid);
                     boolean haveExclusiveLock = exclusiveLock != null;
-                    // 已有排它锁 申请共享锁受到阻塞
+
                     if (haveExclusiveLock && !exclusiveLock.equals(tid)) {
+                        /*
+                            已有排它锁，并且页面上持有排它锁的事务与
+                            当前事务不是同一事务申请共享锁受到阻塞
+                         */
                         showLocksOnPages();
                         Thread.yield();// 让出CPU，尝试参与下一次锁的竞争
 
@@ -62,16 +68,15 @@ public class TransactionManager {
                             throw new TransactionAbortedException();
                         }
                     } else if (haveExclusiveLock && exclusiveLock.equals(tid)) {
-                        // 事务已经拥有排它锁，不需要再获取共享锁
+                        /*
+                            已有排它锁，并且页面上持有排它锁的事务与
+                            当前事务是同一事务，不需要再获取共享锁
+                         */
                         break;
                     } else {
-                        // 设置共享锁
-                        List<TransactionId> sharedTransactions = sharedLockManager.computeIfAbsent(pid, k -> new ArrayList<>());
-                        // 避免重复添加共享锁
-                        if (!sharedTransactions.contains(tid)) {
-                            sharedTransactions.add(tid);
-                        }
-                        // 加锁成功
+                        // 设置共享锁, 使用Set避免重复添加共享锁
+                        sharedLockManager.computeIfAbsent(pid, k -> new HashSet<>()).add(tid);
+                        // 加锁成功直接返回
                         break;
                     }
                 }
@@ -79,70 +84,71 @@ public class TransactionManager {
         } else {
             while (true) {
                 synchronized (exclusiveLockManager) {
-                    List<TransactionId> sharedTransactions = sharedLockManager.get(pid);
-                    boolean haveSharedLock = sharedTransactions != null && sharedTransactions.size() > 0;
-                    // 尝试获取排它锁，但是已有共享锁受到阻塞
-                    if (haveSharedLock && !sharedTransactions.contains(tid)) {
+
+                    TransactionId exclusiveLock = exclusiveLockManager.get(pid);
+                    boolean haveExclusiveLock = exclusiveLock != null;
+
+                    if (haveExclusiveLock && !exclusiveLock.equals(tid)) {
+                        /*
+                            已有排它锁，并且页面上持有排它锁的事务与
+                            当前事务不是同一事务申请排他锁受到阻塞
+                         */
                         if (isTimeOutTransaction(tid)) {
-                            for (int i = 0; i < sharedTransactions.size(); i++ ) {
-                                TransactionId sharedTid = sharedTransactions.get(i);
-                                try {
-                                    assert sharedTid.getId() != tid.getId();
-                                    sharedTid.getTransaction().abort();
-                                    Debug.log("Rollback tid#" + sharedTid.getId() + " for tid#" + tid.getId());
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-
-                            // 共享锁被全部释放掉了
-                            assert (sharedLockManager.get(pid) == null || sharedLockManager.get(pid).size() == 0) ;
-
-                            // 设置排它锁
-                            exclusiveLockManager.put(pid, tid);
-                            // 加锁成功
-                            break;
-                        } else {
-                            Thread.yield();
+                            throw new TransactionAbortedException();
                         }
-                    } else if (haveSharedLock && sharedTransactions.contains(tid)) {
-                        // 考虑锁升级的情况
-                        sharedTransactions.remove(tid);
-
-                        for (int i = 0; i < sharedTransactions.size(); i++ ) {
-                            TransactionId sharedTid = sharedTransactions.get(i);
-                            try {
-                                assert sharedTid.getId() != tid.getId();
-                                sharedTid.getTransaction().abort();
-                                Debug.log("Rollback tid#" + sharedTid.getId() + " for tid#" + tid.getId());
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        // 共享锁被全部释放掉了
-                        assert (!(sharedLockManager.get(pid) == null || sharedLockManager.get(pid).size() == 0));
-
-                        exclusiveLockManager.put(pid, tid);
-                        // 加锁成功
+                        Thread.yield();
+                    } else if (haveExclusiveLock && exclusiveLock.equals(tid)) {
+                        /*
+                            已有排它锁，并且页面上持有排它锁的事务与
+                            当前事务是同一事务，不需要重新申请排他锁
+                         */
                         break;
-
                     } else {
-                        // 无共享锁
-                        TransactionId oldTid = exclusiveLockManager.get(pid);
-                        boolean haveExclusiveLock = oldTid != null;
-                        if (haveExclusiveLock && !oldTid.equals(tid)) {
-                            if (isTimeOutTransaction(tid.getTransaction())) {
-                                throw new TransactionAbortedException();
-                            }
-                            Thread.yield();
-                        } else {
-                            // 设置排它锁
-                            assert (sharedLockManager.get(pid) == null || sharedLockManager.get(pid).size() == 0);
-                            exclusiveLockManager.put(pid, tid);
-                            // 加锁成功
-                            break;
+                        /*
+                            无排他锁的情况考虑是否存在共享锁
+                         */
+
+                        Set<TransactionId> sharedTransactions = sharedLockManager.get(pid);
+                        boolean haveSharedLock = sharedTransactions != null && sharedTransactions.size() > 0;
+                        /*
+                            尝试获取排它锁，但是已有共享锁受到阻塞,
+                         */
+                        if (haveSharedLock && !sharedTransactions.contains(tid)) {
+//                            if (isTimeOutTransaction(tid)) {
+//                                for (int i = 0; i < sharedTransactions.size(); i++ ) {
+//                                    TransactionId sharedTid = sharedTransactions.get(i);
+//                                    try {
+//                                        assert sharedTid.getId() != tid.getId();
+//                                        sharedTid.getTransaction().abort();
+//                                        Debug.log("Rollback tid#" + sharedTid.getId() + " for tid#" + tid.getId());
+//                                    } catch (IOException e) {
+//                                        e.printStackTrace();
+//                                    }
+//                                }
+//
+//                                // 共享锁被全部释放掉了
+//                                assert (sharedLockManager.get(pid) == null || sharedLockManager.get(pid).size() == 0) ;
+//
+//                                // 设置排它锁
+//                                exclusiveLockManager.put(pid, tid);
+//                                // 加锁成功
+//                                break;
+//                            } else {
+                                Thread.yield();
+//                            }
+                        } else if (haveSharedLock && sharedTransactions.contains(tid)) {
+                            /*
+                                危险操作 :(
+                                由于共享锁并不能对页面进行写操作，页面是安全的，干净的，
+                                故直接剥夺原持有共享锁权限的事务们，对页面执行加排它锁的操作
+                             */
+                            sharedTransactions.clear();
                         }
+
+                        // 无共享锁, 设置排它锁
+                        assert (sharedLockManager.get(pid) == null || sharedLockManager.get(pid).size() == 0);
+                        exclusiveLockManager.put(pid, tid);
+                        break;
                     }
                 }
             }
@@ -152,11 +158,12 @@ public class TransactionManager {
     public boolean holdsLock(TransactionId tid, PageId p) {
         // 首先检查排它锁
         synchronized (exclusiveLockManager) {
-            if (this.exclusiveLockManager.get(p).equals(tid)) {
+            if (this.exclusiveLockManager.get(p) != null &&
+                    this.exclusiveLockManager.get(p).equals(tid)) {
                 return true;
             } else {
                 // 查看是否有共享锁
-                List<TransactionId> sharedTransactions = this.sharedLockManager.get(p);
+                Set<TransactionId> sharedTransactions = this.sharedLockManager.get(p);
                 if (sharedTransactions != null && sharedTransactions.contains(tid)) {
                     return true;
                 }
@@ -165,19 +172,18 @@ public class TransactionManager {
         }
     }
 
-    public List<TransactionId> getLocksOnThePage(PageId pid) {
+    public Set<TransactionId> getLocksOnThePage(PageId pid) {
         synchronized (exclusiveLockManager) {
-            List<TransactionId> locks = new ArrayList<>();
+            Set<TransactionId> locks = new HashSet<>();
             TransactionId xLock = this.exclusiveLockManager.get(pid);
             if (xLock != null) {
                 locks.add(xLock);
             } else {
-                List<TransactionId> sLocks = this.sharedLockManager.get(pid);
+                Set<TransactionId> sLocks = this.sharedLockManager.get(pid);
                 if (sLocks != null) {
                     locks = sLocks;
                 }
             }
-
             return locks;
         }
     }
@@ -189,7 +195,7 @@ public class TransactionManager {
 
         synchronized (exclusiveLockManager) {
             this.exclusiveLockManager.remove(pid);
-            List<TransactionId> sharedTransactions = this.sharedLockManager.get(pid);
+            Set<TransactionId> sharedTransactions = this.sharedLockManager.get(pid);
             if (sharedTransactions != null) {
                 sharedTransactions.remove(tid);
             }
@@ -201,7 +207,7 @@ public class TransactionManager {
      */
     private boolean isDeadLockTransaction(TransactionId tid) {
         synchronized (exclusiveLockManager) {
-            List<TransactionId> targets = this.waitForGraph.get(tid);
+            Set<TransactionId> targets = this.waitForGraph.get(tid);
 
             if (targets == null || targets.size() == 0) {
                 return false;
@@ -211,9 +217,9 @@ public class TransactionManager {
                 // 类似于广度优先搜索
                 while (true) {
                     boolean noChild = true;
-                    List<TransactionId> nextTargets = new ArrayList<>();
+                    Set<TransactionId> nextTargets = new HashSet<>();
                     for (TransactionId target : targets) {
-                        List<TransactionId> waitFor = this.waitForGraph.get(target);
+                        Set<TransactionId> waitFor = this.waitForGraph.get(target);
 
                         if (waitFor != null && waitFor.size() > 0) {
                             if (waitingList.contains(target)) {
@@ -262,9 +268,9 @@ public class TransactionManager {
                 Debug.log("Page#" + pid.getPageNumber() + " has X-Lock: " + xlock.getId());
             }
 
-            for (Map.Entry<PageId, List<TransactionId>> group : sharedLockManager.entrySet()) {
+            for (Map.Entry<PageId, Set<TransactionId>> group : sharedLockManager.entrySet()) {
                 PageId pid = group.getKey();
-                List<TransactionId> slocks = group.getValue();
+                Set<TransactionId> slocks = group.getValue();
                 for (TransactionId slock : slocks) {
                     Debug.log("Page#" + pid.getPageNumber() + " has S-Lock: " + slock.getId());
                 }

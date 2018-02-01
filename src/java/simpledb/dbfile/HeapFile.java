@@ -1,7 +1,9 @@
 package simpledb.dbfile;
 
+
 import simpledb.BufferPool;
 import simpledb.Database;
+import simpledb.Debug;
 import simpledb.exception.DbException;
 import simpledb.Permissions;
 import simpledb.transaction.TransactionId;
@@ -34,7 +36,6 @@ import java.util.List;
 public class HeapFile implements DbFile {
 
     private final File diskFile;
-    private final String tableName;
     private final TupleDesc tupleDesc;
     private final int tableId;
 
@@ -50,7 +51,6 @@ public class HeapFile implements DbFile {
         this.tupleDesc = td;
 
         this.diskFile = diskFile;
-        this.tableName = diskFile.getName();
         this.tableId = diskFile.getAbsoluteFile().hashCode();
     }
 
@@ -60,7 +60,6 @@ public class HeapFile implements DbFile {
      * @return the File backing this HeapFile on disk.
      */
     public File getFile() {
-        // some code goes here
         return diskFile;
     }
 
@@ -73,9 +72,8 @@ public class HeapFile implements DbFile {
      *
      * @return an ID uniquely identifying this HeapFile.
      */
+    @Override
     public int getId() {
-        // some code goes here
-        //throw new UnsupportedOperationException("implement this");
         return tableId;
     }
 
@@ -84,13 +82,12 @@ public class HeapFile implements DbFile {
      *
      * @return TupleDesc of this DbFile.
      */
+    @Override
     public TupleDesc getTupleDesc() {
-        // some code goes here
-        //throw new UnsupportedOperationException("implement this");
         return this.tupleDesc;
     }
 
-    // see DbFile.java for javadocs
+    @Override
     public Page readPage(PageId pageId) {
         final int pageSize = BufferPool.getPageSize();
         final int offset = pageId.getPageNumber() * pageSize;
@@ -106,13 +103,13 @@ public class HeapFile implements DbFile {
 
             if (fis.available() > 0) {
                 if (fis.read(pageBuffer, 0, pageSize) <= 0) {
-                    System.out.println("Failed to read page:" + pageId.getPageNumber());
+                    Debug.log("Failed to read page:" + pageId.getPageNumber());
                 } else {
                     heapPage = new HeapPage((HeapPageId) pageId, pageBuffer);
                 }
             }
         } catch (IOException e) {
-            System.out.println("HeapFile##readPage: " +
+            Debug.log("HeapFile##readPage: " +
                     "Exception happened when database trying to get page from disk");
         } finally {
             if (fis != null) {
@@ -128,10 +125,8 @@ public class HeapFile implements DbFile {
         return heapPage;
     }
 
-    // see DbFile.java for javadocs
+    @Override
     public void writePage(Page page) throws IOException {
-        // some code goes here
-        // not necessary for lab1
         PageId pageId = page.getId();
         int pageNo = pageId.getPageNumber();
         int offset = pageNo * BufferPool.getPageSize();
@@ -155,12 +150,12 @@ public class HeapFile implements DbFile {
         return (int) currentPageNo;
     }
 
-    // TODO 我不是很明白为什么这里返回的页面是个list，而不是单个page
-    // see DbFile.java for javadocs
+    /**
+     *  TODO 我不是很明白为什么这里返回的页面是个list，而不是单个page
+     */
+    @Override
     public ArrayList<Page> insertTuple(TransactionId tid, Tuple tuple)
             throws DbException, IOException, TransactionAbortedException {
-        // not necessary for lab1
-        // some code goes here
          /*
          * Note that it is important that the HeapFile.insertTuple() and
          * HeapFile.deleteTuple() methods access pages using the BufferPool.getPage() method
@@ -192,11 +187,9 @@ public class HeapFile implements DbFile {
         return pagesModified;
     }
 
-    // see DbFile.java for javadocs
+    @Override
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t) throws DbException,
             TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
         ArrayList<Page> pagesModified = new ArrayList<>();
         for (int i = 0; i < this.numPages(); i++) {
             PageId pageId = new HeapPageId(this.tableId, i);
@@ -221,9 +214,8 @@ public class HeapFile implements DbFile {
         return pagesModified;
     }
 
-    // see DbFile.java for javadocs
+    @Override
     public DbFileIterator iterator(TransactionId tid) {
-        // some code goes here
         return new HeapFileIterator(this.numPages(), tid);
     }
 
@@ -231,7 +223,7 @@ public class HeapFile implements DbFile {
 
         private TransactionId tid;
 
-        public HeapFileIterator(int pageNo, TransactionId tid) {
+        HeapFileIterator(int pageNo, TransactionId tid) {
             this.pageNo = pageNo;
             this.tid = tid;
         }
@@ -252,7 +244,7 @@ public class HeapFile implements DbFile {
         private Iterator<Tuple> getHeapPageIterator(int pageNo)
                 throws DbException, TransactionAbortedException {
             PageId pageId = new HeapPageId(tableId, pageNo);
-            Page page = Database.getBufferPool().getPage(tid, pageId, Permissions.READ_ONLY);
+            Page page = Database.getBufferPool().getPage(tid, pageId, Permissions.READ_WRITE);
             return ((HeapPage) page).iterator();
         }
 
