@@ -6,13 +6,17 @@ import simpledb.Permissions;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.page.pageid.PageId;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Concurrent Transaction Manager for simple-db
- * (demo)
  *
  * @Author: Jason Leaster
  * @Date 2018/02/01
@@ -38,8 +42,17 @@ public class TransactionManager {
 
     /**
      * 等待其他锁可能有多个，一对多的关系
+     *  Key Tx 等待 ==> Value Txs
      */
     private final Map<TransactionId, Set<TransactionId>> waitForGraph = new ConcurrentHashMap<>();
+
+    public void reset() {
+        synchronized (TransactionManager.class){
+            INSTANCE.exclusiveLockManager.clear();
+            INSTANCE.sharedLockManager.clear();
+            INSTANCE.waitForGraph.clear();
+        }
+    }
 
     public static TransactionManager getInstance() {
         return INSTANCE;
@@ -61,8 +74,12 @@ public class TransactionManager {
                             已有排它锁，并且页面上持有排它锁的事务与
                             当前事务不是同一事务申请共享锁受到阻塞
                          */
-                        showLocksOnPages();
+                        //showLocksOnPages();
+                        waitForGraph.computeIfAbsent(tid, k -> new HashSet<>()).add(exclusiveLock);
+
                         Thread.yield();// 让出CPU，尝试参与下一次锁的竞争
+
+                        dealWithPotentialDeadlocks(tid);
 
                         if (isTimeOutTransaction(tid)) {
                             throw new TransactionAbortedException();
@@ -76,7 +93,9 @@ public class TransactionManager {
                     } else {
                         // 设置共享锁, 使用Set避免重复添加共享锁
                         sharedLockManager.computeIfAbsent(pid, k -> new HashSet<>()).add(tid);
+                        waitForGraph.remove(tid);
                         // 加锁成功直接返回
+                        Debug.log("S_Lock#"+ tid.getId() + " On Page: " + pid.getPageNumber());
                         break;
                     }
                 }
@@ -93,6 +112,9 @@ public class TransactionManager {
                             已有排它锁，并且页面上持有排它锁的事务与
                             当前事务不是同一事务申请排他锁受到阻塞
                          */
+                        waitForGraph.computeIfAbsent(tid, k -> new HashSet<>()).add(exclusiveLock);
+
+                        dealWithPotentialDeadlocks(tid);
                         if (isTimeOutTransaction(tid)) {
                             throw new TransactionAbortedException();
                         }
@@ -114,28 +136,12 @@ public class TransactionManager {
                             尝试获取排它锁，但是已有共享锁受到阻塞,
                          */
                         if (haveSharedLock && !sharedTransactions.contains(tid)) {
-//                            if (isTimeOutTransaction(tid)) {
-//                                for (int i = 0; i < sharedTransactions.size(); i++ ) {
-//                                    TransactionId sharedTid = sharedTransactions.get(i);
-//                                    try {
-//                                        assert sharedTid.getId() != tid.getId();
-//                                        sharedTid.getTransaction().abort();
-//                                        Debug.log("Rollback tid#" + sharedTid.getId() + " for tid#" + tid.getId());
-//                                    } catch (IOException e) {
-//                                        e.printStackTrace();
-//                                    }
-//                                }
-//
-//                                // 共享锁被全部释放掉了
-//                                assert (sharedLockManager.get(pid) == null || sharedLockManager.get(pid).size() == 0) ;
-//
-//                                // 设置排它锁
-//                                exclusiveLockManager.put(pid, tid);
-//                                // 加锁成功
-//                                break;
-//                            } else {
-                                Thread.yield();
-//                            }
+
+                            waitForGraph.computeIfAbsent(tid, k -> new HashSet<>()).addAll(sharedTransactions);
+
+                            dealWithPotentialDeadlocks(tid);
+                            Thread.yield();
+                            continue;
                         } else if (haveSharedLock && sharedTransactions.contains(tid)) {
                             /*
                                 危险操作 :(
@@ -148,6 +154,8 @@ public class TransactionManager {
                         // 无共享锁, 设置排它锁
                         assert (sharedLockManager.get(pid) == null || sharedLockManager.get(pid).size() == 0);
                         exclusiveLockManager.put(pid, tid);
+                        Debug.log("X_Lock#"+ tid.getId() + " On Page: " + pid.getPageNumber());
+                        waitForGraph.remove(tid);
                         break;
                     }
                 }
@@ -188,13 +196,21 @@ public class TransactionManager {
         }
     }
 
+    /**
+     * 释放事务相关的所有锁
+     * @param tid 事务Id
+     * @param pid 页面Id
+     */
     public void releasePage(TransactionId tid, PageId pid) {
         if (pid == null || tid == null) {
             return;
         }
 
         synchronized (exclusiveLockManager) {
-            this.exclusiveLockManager.remove(pid);
+            if (this.exclusiveLockManager.get(pid) != null &&
+                    this.exclusiveLockManager.get(pid).equals(tid)) {
+                this.exclusiveLockManager.remove(pid);
+            }
             Set<TransactionId> sharedTransactions = this.sharedLockManager.get(pid);
             if (sharedTransactions != null) {
                 sharedTransactions.remove(tid);
@@ -237,6 +253,22 @@ public class TransactionManager {
                         targets = nextTargets;
                     }
                 }
+            }
+        }
+    }
+
+    private void dealWithPotentialDeadlocks(TransactionId tid) {
+         /*
+           tid is waiting for the other transaction to release
+           the exclusive lock on the page
+         */
+        if (this.isDeadLockTransaction(tid)) {
+            // break the dead locking
+            try {
+                waitForGraph.remove(tid);
+                Database.getBufferPool().transactionComplete(tid, false);
+            } catch (IOException e) {
+                Debug.log("Abort Dead lock failed!! This shouldn't happen");
             }
         }
     }

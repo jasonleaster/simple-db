@@ -102,6 +102,9 @@ public class BufferPool {
                 if (bufferPool.size() >= this.numPages) {
                     this.evictPage();
                 }
+                if (perm == Permissions.READ_WRITE) {
+                    page.markDirty(true, tid);
+                }
                 bufferPool.put(pid, page);
             }
         }
@@ -156,10 +159,10 @@ public class BufferPool {
                 Page page = group.getValue();
                 if (tid.equals(page.isDirty())) {
                     discardPage(group.getKey());
-                    this.releasePage(tid, page.getId());
-
-                    assert !this.holdsLock(tid, page.getId());
                 }
+
+                this.releasePage(tid, page.getId());
+                assert !this.holdsLock(tid, page.getId());
             }
         }
     }
