@@ -1,5 +1,7 @@
 package simpledb;
 
+import simpledb.transaction.TransactionManager;
+
 import java.io.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -60,6 +62,8 @@ public class Database {
             bufferPoolF = Database.class.getDeclaredField("_bufferpool");
             bufferPoolF.setAccessible(true);
             bufferPoolF.set(_instance.get(), new BufferPool(pages));
+
+            TransactionManager.getInstance().reset();
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
