@@ -3,6 +3,7 @@ package simpledb;
 import junit.framework.JUnit4TestAdapter;
 import org.junit.Before;
 import org.junit.Test;
+import simpledb.aggregator.AggregateFunc;
 import simpledb.aggregator.Aggregator;
 import simpledb.operator.Aggregate;
 import simpledb.operator.OpIterator;
@@ -55,7 +56,7 @@ public class AggregateTest extends SimpleDbTestBase {
                         "b", 2,
                         "b", 4,
                         "b", 6,
-                        "c", 7});
+                        "rightHandConstant", 7});
 
         this.sum = TestUtil.createTupleList(width1,
                 new int[]{1, 12,
@@ -64,7 +65,7 @@ public class AggregateTest extends SimpleDbTestBase {
         this.sumstring = TestUtil.createTupleList(width1,
                 new Object[]{"a", 12,
                         "b", 12,
-                        "c", 7});
+                        "rightHandConstant", 7});
 
         this.avg = TestUtil.createTupleList(width1,
                 new int[]{1, 4,
@@ -91,7 +92,7 @@ public class AggregateTest extends SimpleDbTestBase {
     @Test
     public void getTupleDesc() {
         Aggregate op = new Aggregate(scan1, 0, 0,
-                Aggregator.Op.MIN);
+                AggregateFunc.MIN);
         TupleDesc expected = Utility.getTupleDesc(2);
         TupleDesc actual = op.getTupleDesc();
         assertEquals(expected, actual);
@@ -103,7 +104,7 @@ public class AggregateTest extends SimpleDbTestBase {
     @Test
     public void rewind() throws Exception {
         Aggregate op = new Aggregate(scan1, 1, 0,
-                Aggregator.Op.MIN);
+                AggregateFunc.MIN);
         op.open();
         while (op.hasNext()) {
             assertNotNull(op.next());
@@ -121,7 +122,7 @@ public class AggregateTest extends SimpleDbTestBase {
     @Test
     public void countStringAggregate() throws Exception {
         Aggregate op = new Aggregate(scan2, 1, 0,
-                Aggregator.Op.COUNT);
+                AggregateFunc.COUNT);
         op.open();
         count.open();
         TestUtil.matchAllTuples(count, op);
@@ -132,7 +133,7 @@ public class AggregateTest extends SimpleDbTestBase {
      */
     @Test
     public void sumStringGroupBy() throws Exception {
-        Aggregate op = new Aggregate(scan3, 1, 0, Aggregator.Op.SUM);
+        Aggregate op = new Aggregate(scan3, 1, 0, AggregateFunc.SUM);
         op.open();
         sumstring.open();
         TestUtil.matchAllTuples(sumstring, op);
@@ -144,7 +145,7 @@ public class AggregateTest extends SimpleDbTestBase {
     @Test
     public void sumAggregate() throws Exception {
         Aggregate op = new Aggregate(scan1, 1, 0,
-                Aggregator.Op.SUM);
+                AggregateFunc.SUM);
         op.open();
         sum.open();
         TestUtil.matchAllTuples(sum, op);
@@ -156,7 +157,7 @@ public class AggregateTest extends SimpleDbTestBase {
     @Test
     public void avgAggregate() throws Exception {
         Aggregate op = new Aggregate(scan1, 1, 0,
-                Aggregator.Op.AVG);
+                AggregateFunc.AVG);
         op.open();
         avg.open();
         TestUtil.matchAllTuples(avg, op);
@@ -168,7 +169,7 @@ public class AggregateTest extends SimpleDbTestBase {
     @Test
     public void maxAggregate() throws Exception {
         Aggregate op = new Aggregate(scan1, 1, 0,
-                Aggregator.Op.MAX);
+                AggregateFunc.MAX);
         op.open();
         max.open();
         TestUtil.matchAllTuples(max, op);
@@ -180,7 +181,7 @@ public class AggregateTest extends SimpleDbTestBase {
     @Test
     public void minAggregate() throws Exception {
         Aggregate op = new Aggregate(scan1, 1, 0,
-                Aggregator.Op.MIN);
+                AggregateFunc.MIN);
         op.open();
         min.open();
         TestUtil.matchAllTuples(min, op);

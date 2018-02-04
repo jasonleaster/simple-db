@@ -2,6 +2,7 @@ package simpledb.systemtest;
 
 import org.junit.Test;
 import simpledb.Database;
+import simpledb.aggregator.AggregateFunc;
 import simpledb.aggregator.Aggregator;
 import simpledb.dbfile.DbFile;
 import simpledb.dbfile.HeapFile;
@@ -17,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class AggregateTest extends SimpleDbTestBase {
-    public void validateAggregate(DbFile table, Aggregator.Op operation, int aggregateColumn, int groupColumn, ArrayList<ArrayList<Integer>> expectedResult)
+    public void validateAggregate(DbFile table, AggregateFunc operation, int aggregateColumn, int groupColumn, ArrayList<ArrayList<Integer>> expectedResult)
             throws DbException, TransactionAbortedException, IOException {
         TransactionId tid = new TransactionId();
         SeqScan ss = new SeqScan(tid, table.getId(), "");
@@ -27,12 +28,12 @@ public class AggregateTest extends SimpleDbTestBase {
         Database.getBufferPool().transactionComplete(tid);
     }
 
-    private int computeAggregate(ArrayList<Integer> values, Aggregator.Op operation) {
-        if (operation == Aggregator.Op.COUNT) return values.size();
+    private int computeAggregate(ArrayList<Integer> values, AggregateFunc operation) {
+        if (operation == AggregateFunc.COUNT) return values.size();
 
         int value = 0;
-        if (operation == Aggregator.Op.MIN) value = Integer.MAX_VALUE;
-        else if (operation == Aggregator.Op.MAX) value = Integer.MIN_VALUE;
+        if (operation == AggregateFunc.MIN) value = Integer.MAX_VALUE;
+        else if (operation == AggregateFunc.MAX) value = Integer.MIN_VALUE;
 
         for (int v : values) {
             switch (operation) {
@@ -51,11 +52,11 @@ public class AggregateTest extends SimpleDbTestBase {
             }
         }
 
-        if (operation == Aggregator.Op.AVG) value /= values.size();
+        if (operation == AggregateFunc.AVG) value /= values.size();
         return value;
     }
 
-    private ArrayList<ArrayList<Integer>> aggregate(ArrayList<ArrayList<Integer>> tuples, Aggregator.Op operation, int aggregateColumn, int groupColumn) {
+    private ArrayList<ArrayList<Integer>> aggregate(ArrayList<ArrayList<Integer>> tuples, AggregateFunc operation, int aggregateColumn, int groupColumn) {
         // Group the values
         HashMap<Integer, ArrayList<Integer>> values = new HashMap<>();
         for (ArrayList<Integer> t : tuples) {
@@ -81,7 +82,7 @@ public class AggregateTest extends SimpleDbTestBase {
     private final static int MAX_VALUE = 64;
     private final static int COLUMNS = 3;
 
-    private void doAggregate(Aggregator.Op operation, int groupColumn)
+    private void doAggregate(AggregateFunc operation, int groupColumn)
             throws IOException, DbException, TransactionAbortedException {
         // Create the table
         ArrayList<ArrayList<Integer>> createdTuples = new ArrayList<ArrayList<Integer>>();
@@ -98,33 +99,33 @@ public class AggregateTest extends SimpleDbTestBase {
 
     @Test
     public void testSum() throws IOException, DbException, TransactionAbortedException {
-        doAggregate(Aggregator.Op.SUM, 0);
+        doAggregate(AggregateFunc.SUM, 0);
     }
 
     @Test
     public void testMin() throws IOException, DbException, TransactionAbortedException {
-        doAggregate(Aggregator.Op.MIN, 0);
+        doAggregate(AggregateFunc.MIN, 0);
     }
 
     @Test
     public void testMax() throws IOException, DbException, TransactionAbortedException {
-        doAggregate(Aggregator.Op.MAX, 0);
+        doAggregate(AggregateFunc.MAX, 0);
     }
 
     @Test
     public void testCount() throws IOException, DbException, TransactionAbortedException {
-        doAggregate(Aggregator.Op.COUNT, 0);
+        doAggregate(AggregateFunc.COUNT, 0);
     }
 
     @Test
     public void testAverage() throws IOException, DbException, TransactionAbortedException {
-        doAggregate(Aggregator.Op.AVG, 0);
+        doAggregate(AggregateFunc.AVG, 0);
     }
 
     @Test
     public void testAverageNoGroup()
             throws IOException, DbException, TransactionAbortedException {
-        doAggregate(Aggregator.Op.AVG, Aggregator.NO_GROUPING);
+        doAggregate(AggregateFunc.AVG, Aggregator.NO_GROUPING);
     }
 
     /**

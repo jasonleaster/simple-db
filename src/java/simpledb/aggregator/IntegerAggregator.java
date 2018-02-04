@@ -26,7 +26,7 @@ public class IntegerAggregator implements Aggregator {
     private int gbField;
     private Type gbFieldType;
     private int aField;
-    private Op what;
+    private AggregateFunc what;
 
     /**
      * GroupFiled -> totalSum
@@ -61,8 +61,7 @@ public class IntegerAggregator implements Aggregator {
      *            the aggregation operator
      */
 
-    public IntegerAggregator(int gbField, Type gbFieldType, int aField, Op what) {
-        // some code goes here
+    public IntegerAggregator(int gbField, Type gbFieldType, int aField, AggregateFunc what) {
         this.gbField = gbField;
         this.gbFieldType = gbFieldType;
         this.aField = aField;
@@ -97,8 +96,8 @@ public class IntegerAggregator implements Aggregator {
      * @param tuple
      *            the Tuple containing an aggregate field and a group-by field
      */
+    @Override
     public void mergeTupleIntoGroup(Tuple tuple) {
-        // some code goes here
 
         Field curGrpByField;
         if (this.gbField < 0) {
@@ -127,7 +126,7 @@ public class IntegerAggregator implements Aggregator {
         IntField after = null;
         if (!this.results.containsKey(curGrpByField)) {
             after = curAgField;
-            if (what == Op.COUNT) {
+            if (what == AggregateFunc.COUNT) {
                 after = new IntField(1);
             }
         } else {
@@ -181,9 +180,8 @@ public class IntegerAggregator implements Aggregator {
      *         aggregateVal is determined by the type of aggregate specified in
      *         the constructor.
      */
+    @Override
     public OpIterator iterator() {
-        // some code goes here
-        // throw new UnsupportedOperationException("please implement me for lab2");
         return new IntegerAgOpIterator();
     }
 

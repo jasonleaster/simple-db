@@ -22,9 +22,7 @@ public class StringAggregator implements Aggregator {
     private static final long serialVersionUID = 1L;
 
     private int gbfield;
-    private Type gbfieldtype;
-    private int afield;
-    private Op what;
+    private AggregateFunc what;
 
     /**
      * GroupFiled -> result
@@ -44,17 +42,13 @@ public class StringAggregator implements Aggregator {
      * @throws IllegalArgumentException if what != COUNT
      */
 
-    public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
-        // some code goes here
-        if (what != Op.COUNT) {
+    public StringAggregator(int gbfield, Type gbfieldtype, int afield, AggregateFunc what) {
+        if (what != AggregateFunc.COUNT) {
             throw new IllegalArgumentException("The parameter of StringAggregator ERROR!");
         }
 
         this.gbfield = gbfield;
-        this.gbfieldtype = gbfieldtype;
-        this.afield = afield;
         this.what = what;
-
         this.results = new ConcurrentHashMap<>();
 
         Type[] types = new Type[2];
@@ -64,15 +58,14 @@ public class StringAggregator implements Aggregator {
         names[0] = "groupVal";
         names[1] = "aggregateVal";
         this.tupleDescForAggregatorResult = new TupleDesc(types, names);
-
     }
 
     /**
      * Merge a new tuple into the aggregate, grouping as indicated in the constructor
      * @param tuple the Tuple containing an aggregate field and a group-by field
      */
+    @Override
     public void mergeTupleIntoGroup(Tuple tuple) {
-        // some code goes here
         Field curGrpByField = tuple.getField(this.gbfield);
 
         IntField after = null;
@@ -106,9 +99,8 @@ public class StringAggregator implements Aggregator {
      *   grouping. The aggregateVal is determined by the type of
      *   aggregate specified in the constructor.
      */
+    @Override
     public OpIterator iterator() {
-        // some code goes here
-        // throw new UnsupportedOperationException("please implement me for lab2");
         return new StringAgOpIterator();
     }
 
