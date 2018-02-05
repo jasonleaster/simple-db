@@ -28,26 +28,6 @@ public class IntField implements Field {
         value = i;
     }
 
-    @Override
-    public String toString() {
-        return Integer.toString(value);
-    }
-
-    @Override
-    public int hashCode() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object field) {
-        return ((IntField) field).value == value;
-    }
-
-    @Override
-    public void serialize(DataOutputStream dos) throws IOException {
-        dos.writeInt(value);
-    }
-
     /**
      * Compare the specified field to the value of this Field.
      * Return semantics are as specified by Field.compare
@@ -88,5 +68,25 @@ public class IntField implements Field {
     @Override
     public Type getType() {
         return Type.INT_TYPE;
+    }
+
+    @Override
+    public String toString() {
+        return Integer.toString(value);
+    }
+
+    @Override
+    public int hashCode() {
+        return value;
+    }
+
+    @Override
+    public boolean equals(Object field) {
+        return ((IntField) field).value == value;
+    }
+
+    @Override
+    public void serialize(DataOutputStream dos) throws IOException {
+        dos.writeInt(value);
     }
 }

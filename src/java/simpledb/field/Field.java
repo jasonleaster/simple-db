@@ -23,21 +23,11 @@ public interface Field extends Serializable{
      * @param value The value to compare this Field to
      * @return Whether or not the comparison yields true.
      */
-    public boolean compare(Predicate.Op op, Field value);
+    boolean compare(Predicate.Op op, Field value);
 
     /**
      * Returns the type of this field (see {@link Type#INT_TYPE} or {@link Type#STRING_TYPE}
      * @return type of this field
      */
-    public Type getType();
-    
-    /**
-     * Hash code.
-     * Different Field objects representing the same value should probably
-     * return the same hashCode.
-     */
-    public int hashCode();
-    public boolean equals(Object field);
-
-    public String toString();
+    Type getType();
 }

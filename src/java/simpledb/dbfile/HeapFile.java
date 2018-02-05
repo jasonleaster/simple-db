@@ -35,9 +35,9 @@ import java.util.List;
  */
 public class HeapFile implements DbFile {
 
-    private final File diskFile;
-    private final TupleDesc tupleDesc;
     private final int tableId;
+    private final TupleDesc tupleDesc;
+    private final File diskFile;
 
 
     /**
@@ -47,11 +47,9 @@ public class HeapFile implements DbFile {
      *                 store for this heap diskFile.
      */
     public HeapFile(File diskFile, TupleDesc td) {
-        // some code goes here
         this.tupleDesc = td;
-
-        this.diskFile = diskFile;
-        this.tableId = diskFile.getAbsoluteFile().hashCode();
+        this.diskFile  = diskFile;
+        this.tableId   = diskFile.getAbsoluteFile().hashCode();
     }
 
     /**
@@ -246,6 +244,11 @@ public class HeapFile implements DbFile {
         private Iterator<Tuple> getHeapPageIterator(int pageNo)
                 throws DbException, TransactionAbortedException {
             PageId pageId = new HeapPageId(tableId, pageNo);
+            /*
+                这里获取页面的权限值得商讨
+                1. 如果使用READ_ONLY, 会导致并发事务的系统单元测试挂掉，无解
+                2. 使用READ_WRITE，抢占该页数据，避免并发写覆盖的情况，为了通过单元测试。
+             */
             Page page = Database.getBufferPool().getPage(tid, pageId, Permissions.READ_WRITE);
             return ((HeapPage) page).iterator();
         }
