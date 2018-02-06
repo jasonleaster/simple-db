@@ -1,6 +1,5 @@
 package simpledb.histogram;
 
-import simpledb.histogram.IntHistogram;
 import simpledb.operator.Predicate;
 
 /**

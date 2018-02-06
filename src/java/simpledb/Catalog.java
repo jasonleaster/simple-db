@@ -8,7 +8,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -22,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Catalog {
 
+    private static final Integer lock = -1;
+
     private Map<Integer, DbFile> tblIdToDbFile;
     private Map<Integer, String> tblIdToPrimaryKey;
 
@@ -33,11 +39,12 @@ public class Catalog {
      * Creates a new, empty catalog.
      */
     public Catalog() {
-        // some code goes here
-        this.tblIdToDbFile  = new ConcurrentHashMap<>();
-        this.tblIdToPrimaryKey = new ConcurrentHashMap<>();
-        this.tblIdToTblName = new ConcurrentHashMap<>();
-        this.tblNameToTblId = new ConcurrentHashMap<>();
+        synchronized (lock) {
+            this.tblIdToDbFile = new ConcurrentHashMap<>();
+            this.tblIdToPrimaryKey = new ConcurrentHashMap<>();
+            this.tblIdToTblName = new ConcurrentHashMap<>();
+            this.tblNameToTblId = new ConcurrentHashMap<>();
+        }
     }
 
     /**
@@ -49,15 +56,15 @@ public class Catalog {
      * conflict exists, use the last table to be added as the table for a given name.
      * @param pkeyField the name of the primary key field
      */
-    public synchronized void addTable(DbFile file, String name, String pkeyField) {
-        // some code goes here
-        // TODO un-threadsafe
-        Integer tableId = file.getId();
-        tblIdToPrimaryKey.put(tableId, pkeyField);
-        tblIdToDbFile.put(tableId, file);
+    public void addTable(DbFile file, String name, String pkeyField) {
+        synchronized (lock) {
+            Integer tableId = file.getId();
+            tblIdToPrimaryKey.put(tableId, pkeyField);
+            tblIdToDbFile.put(tableId, file);
 
-        tblIdToTblName.put(tableId, name);
-        tblNameToTblId.put(name, tableId);
+            tblIdToTblName.put(tableId, name);
+            tblNameToTblId.put(name, tableId);
+        }
     }
 
     public void addTable(DbFile file, String name) {
@@ -80,7 +87,6 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public int getTableId(String name) throws NoSuchElementException {
-        // some code goes here
         try {
             return tblNameToTblId.get(name);
         } catch (RuntimeException e) {
@@ -95,7 +101,6 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public TupleDesc getTupleDesc(int tableId) throws NoSuchElementException {
-        // some code goes here
         DbFile file = tblIdToDbFile.get(tableId);
         return file.getTupleDesc();
     }
@@ -107,32 +112,29 @@ public class Catalog {
      *     function passed to addTable
      */
     public DbFile getDatabaseFile(int tableId) throws NoSuchElementException {
-        // some code goes here
         return tblIdToDbFile.get(tableId);
     }
 
     public String getPrimaryKey(int tableId) {
-        // some code goes here
         return tblIdToPrimaryKey.get(tableId);
     }
 
     public Iterator<Integer> tableIdIterator() {
-        // some code goes here
         return tblIdToDbFile.keySet().iterator();
     }
 
     public String getTableName(int id) {
-        // some code goes here
         return tblIdToTblName.get(id);
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
-        // some code goes here
-        tblIdToTblName.clear();
-        tblNameToTblId.clear();
-        tblIdToDbFile.clear();
-        tblIdToPrimaryKey.clear();
+        synchronized (lock) {
+            tblIdToTblName.clear();
+            tblNameToTblId.clear();
+            tblIdToDbFile.clear();
+            tblIdToPrimaryKey.clear();
+        }
     }
     
     /**
@@ -148,27 +150,31 @@ public class Catalog {
             while ((line = br.readLine()) != null) {
                 //assume line is of the format name (field type, field type, ...)
                 String name = line.substring(0, line.indexOf("(")).trim();
-                //System.out.println("TABLE NAME: " + name);
+
+                //Debug.log("TABLE NAME: " + name);
                 String fields = line.substring(line.indexOf("(") + 1, line.indexOf(")")).trim();
                 String[] els = fields.split(",");
                 ArrayList<String> names = new ArrayList<String>();
                 ArrayList<Type> types = new ArrayList<Type>();
                 String primaryKey = "";
+
                 for (String e : els) {
                     String[] els2 = e.trim().split(" ");
                     names.add(els2[0].trim());
-                    if (els2[1].trim().toLowerCase().equals("int"))
+
+                    if (els2[1].trim().toLowerCase().equals("int")) {
                         types.add(Type.INT_TYPE);
-                    else if (els2[1].trim().toLowerCase().equals("string"))
+                    } else if (els2[1].trim().toLowerCase().equals("string")) {
                         types.add(Type.STRING_TYPE);
-                    else {
+                    } else {
                         System.out.println("Unknown type " + els2[1]);
                         System.exit(0);
                     }
+
                     if (els2.length == 3) {
-                        if (els2[2].trim().equals("pk"))
+                        if (els2[2].trim().equals("pk")) {
                             primaryKey = els2[0].trim();
-                        else {
+                        } else {
                             System.out.println("Unknown annotation " + els2[2]);
                             System.exit(0);
                         }
