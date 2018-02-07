@@ -1,4 +1,4 @@
-package simpledb;
+package simpledb.logical;
 
 import simpledb.operator.Predicate;
 
@@ -71,7 +71,7 @@ public class LogicalJoinNode {
     }
     
     @Override public String toString() {
-        return t1Alias + ":" + t2Alias ;//+ ";" + f1 + " " + p + " " + f2;
+        return t1Alias + ":" + t2Alias ;//+ ";" + f1 + " " + predicteOper + " " + f2;
     }
     
     @Override public int hashCode() {
