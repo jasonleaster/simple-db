@@ -52,7 +52,6 @@ public class BufferPool {
      * @param numPages maximum number of pages in this buffer pool.
      */
     public BufferPool(int numPages) {
-        // some code goes here
         this.numPages = numPages;
     }
 
@@ -210,18 +209,12 @@ public class BufferPool {
      */
     public void deleteTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
         // TODO 参数校验
 
         PageId pageId = t.getRecordId().getPageId();
         int tableId = pageId.getTableId();
         DbFile dbFile = Database.getCatalog().getDatabaseFile(tableId);
-        List<Page> modifiedPages = dbFile.deleteTuple(tid, t);
-        for (Page dirtyPage : modifiedPages) {
-            dbFile.writePage(dirtyPage);
-        }
-
+        dbFile.deleteTuple(tid, t);
     }
 
     /**
@@ -258,12 +251,9 @@ public class BufferPool {
      * are removed from the cache so they can be reused safely
      */
     public synchronized void discardPage(PageId pid) {
-        // some code goes here
-        // not necessary for lab1
         if (pid == null) {
             return;
         }
-
         bufferPool.remove(pid);
     }
 
@@ -273,14 +263,12 @@ public class BufferPool {
      * @param pid an ID indicating the page to flush
      */
     private synchronized void flushPage(PageId pid) throws IOException {
-        // some code goes here
-        // not necessary for lab1
         Page pageToBeFlushed = bufferPool.get(pid);
         TransactionId tid = pageToBeFlushed.isDirty();
         if (pageToBeFlushed != null && tid != null) {
             Page before = pageToBeFlushed.getBeforeImage();
             // flushPage本身无事务控制，不应该调用setBeforeImage
-            //pageToBeFlushed.setBeforeImage();
+            // pageToBeFlushed.setBeforeImage();
             Database.getLogFile().logWrite(tid, before, pageToBeFlushed);
             Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pageToBeFlushed);
         }
