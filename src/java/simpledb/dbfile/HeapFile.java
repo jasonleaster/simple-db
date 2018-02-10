@@ -216,16 +216,23 @@ public class HeapFile implements DbFile {
 
     @Override
     public DbFileIterator iterator(TransactionId tid) {
-        return new HeapFileIterator(this.numPages(), tid);
+        return new HeapFileIterator(this.numPages(), tid, Permissions.READ_WRITE);
+    }
+
+    @Override
+    public DbFileIterator iterateForReadOnly(TransactionId tid) {
+        return new HeapFileIterator(this.numPages(), tid, Permissions.READ_ONLY);
     }
 
     private class HeapFileIterator extends AbstractDbFileIterator {
 
         private TransactionId tid;
+        private Permissions permissions;
 
-        HeapFileIterator(int pageNo, TransactionId tid) {
+        HeapFileIterator(int pageNo, TransactionId tid, Permissions permissions) {
             this.pageNo = pageNo;
             this.tid = tid;
+            this.permissions = permissions;
         }
 
         private int pageNo;
@@ -249,7 +256,7 @@ public class HeapFile implements DbFile {
                 1. 如果使用READ_ONLY, 会导致并发事务的系统单元测试挂掉，无解
                 2. 使用READ_WRITE，抢占该页数据，避免并发写覆盖的情况，为了通过单元测试。
              */
-            Page page = Database.getBufferPool().getPage(tid, pageId, Permissions.READ_WRITE);
+            Page page = Database.getBufferPool().getPage(tid, pageId, permissions);
             return ((HeapPage) page).iterator();
         }
 

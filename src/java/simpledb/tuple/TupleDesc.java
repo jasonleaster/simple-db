@@ -59,7 +59,6 @@ public class TupleDesc implements Serializable {
      *        that are included in this TupleDesc
      * */
     public Iterator<TDItem> iterator() {
-        // some code goes here
         return tdItems.iterator();
     }
 
@@ -77,9 +76,7 @@ public class TupleDesc implements Serializable {
      *            be null.
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
-        // some code goes here
-        for (int i = 0; i < typeAr.length; i++)
-        {
+        for (int i = 0; i < typeAr.length; i++) {
             if (fieldAr == null) {
                 tdItems.add(new TDItem(typeAr[i], null));
             } else {
@@ -97,7 +94,6 @@ public class TupleDesc implements Serializable {
      *            TupleDesc. It must contain at least one entry.
      */
     public TupleDesc(Type[] typeAr) {
-        // some code goes here
         this(typeAr, null);
     }
 
@@ -105,7 +101,6 @@ public class TupleDesc implements Serializable {
      * @return the number of fields in this TupleDesc
      */
     public int numFields() {
-        // some code goes here
         return tdItems.size();
     }
 
@@ -156,7 +151,13 @@ public class TupleDesc implements Serializable {
      *             if no field with a matching name is found.
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
-        // some code goes here
+        /*
+            考虑name中包含表名 TableName.fieldName的情况
+         */
+        if (name != null && !name.isEmpty() && name.contains(".")) {
+            String[] vals = name.split("[.]");
+            name = vals[vals.length - 1];
+        }
 
         for (int i = 0; i < tdItems.size(); i++) {
             TDItem tdItem = tdItems.get(i);
@@ -172,7 +173,6 @@ public class TupleDesc implements Serializable {
      *         Note that tuples from a given TupleDesc are of a fixed size.
      */
     public int getSize() {
-        // some code goes here
         int size = 0;
         for (TDItem item : tdItems) {
             size += item.fieldType.getLen();
@@ -191,8 +191,6 @@ public class TupleDesc implements Serializable {
      * @return the new TupleDesc
      */
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
-        // some code goes here
-        //TupleDesc newTuppleDes = new TupleDesc();
         if (td1 == null) {
             return td2;
         }
@@ -231,7 +229,6 @@ public class TupleDesc implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        // some code goes here
         if (!(o instanceof  TupleDesc)) {
             return false;
         }
@@ -252,9 +249,6 @@ public class TupleDesc implements Serializable {
 
     @Override
     public int hashCode() {
-        // If you want to use TupleDesc as keys for HashMap, implement this so
-        // that equal objects have equals hashCode() results
-        // throw new UnsupportedOperationException("unimplemented");
         int result = 0;
         for (TDItem item : tdItems) {
             result += item.toString().hashCode() *  37 ;
@@ -271,7 +265,6 @@ public class TupleDesc implements Serializable {
      */
     @Override
     public String toString() {
-        // some code goes here
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < this.numFields(); i++) {
             TDItem tdItem =  tdItems.get(i);

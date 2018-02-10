@@ -294,13 +294,14 @@ public class BufferPool {
                 Database.getLogFile().logWrite(tid, before, pageToBeFlushed);
                 Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pageToBeFlushed);
 
-                /*
-                    落盘后，释放事务在这个页上面的锁
-                 */
-                this.releasePage(tid, pid);
 
-                assert !this.holdsLock(tid, pid);
             }
+            /*
+                落盘后，释放事务在这个页上面的锁
+            */
+            this.releasePage(tid, pid);
+
+            assert !this.holdsLock(tid, pid);
         }
     }
 
@@ -309,6 +310,14 @@ public class BufferPool {
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
     private synchronized void evictPage() throws DbException {
+
+        /*
+            TODO BUG TO BE FIXED
+            当前的evict策略有一个问题，当事务持有的写权限页面过多时，
+            buffer pool无法直接丢弃这些页面，会抛出异常，这是不正常的。
+
+            考虑TableStatsTest.java 和 systemtest Transaction.java考虑的情况
+         */
 
         for (Map.Entry<PageId, Page> group : bufferPool.entrySet()) {
             Page page = group.getValue();

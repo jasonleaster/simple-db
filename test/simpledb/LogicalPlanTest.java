@@ -7,10 +7,12 @@ import simpledb.field.IntField;
 import simpledb.logical.LogicalPlan;
 import simpledb.operator.OpIterator;
 import simpledb.operator.Predicate;
+import simpledb.transaction.Transaction;
 import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
+import javax.xml.crypto.Data;
 import java.io.File;
 import java.util.HashMap;
 
@@ -41,23 +43,58 @@ public class LogicalPlanTest {
         Tuple tupleB = new Tuple(td);
         tupleB.setField(0, new IntField(-1));
 
-        TransactionId tid = new TransactionId();
+        Transaction prepareTx = new Transaction();
+        prepareTx.start();
+        TransactionId tidPreparing = prepareTx.getId();
 
         LogicalPlan logicalPlan = new LogicalPlan();
-        logicalPlan.addScan(heapFile.getId(), "t1");
-
         try {
-            Database.getBufferPool().insertTuple(tid, heapFile.getId(), tupleA);
-            Database.getBufferPool().insertTuple(tid, heapFile.getId(), tupleB);
-            Database.getBufferPool().flushPages(tid);
+            logicalPlan.addScan(heapFile.getId(), "t1");
+            logicalPlan.addProjectField("field0", "");
 
-            logicalPlan.addFilter("t1.field0", Predicate.Op.GREATER_THAN, "1");
+            Database.getBufferPool().insertTuple(tidPreparing, heapFile.getId(), tupleA);
+            Database.getBufferPool().insertTuple(tidPreparing, heapFile.getId(), tupleB);
+            prepareTx.commit();
+
+            logicalPlan.addFilter("t1.field0", Predicate.Op.GREATER_THAN, "0");
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(0);
         }
 
-        /*
+        OpIterator opIterator;
+        try {
+            /*
+                将逻辑计划转化成物理执行计划，实际为具体的迭代器，
+                并且迭代器会遍历执行这个物理执行计划。
+             */
+            final HashMap<String, TableStats> tableMap = new HashMap<>();
+            tableMap.put("t1", new TableStats(heapFile.getId(), 1));
+
+            Transaction tx = new Transaction();
+            tx.start();
+            TransactionId tid = tx.getId();
+            opIterator = logicalPlan.physicalPlan(tid, tableMap, false);
+            try {
+                opIterator.open();
+                int i = 0;
+                while (opIterator.hasNext()) {
+                    // TODO bug 这里应该只打印一次才对
+                    Tuple tup = opIterator.next();
+                    Debug.log("times: " + (i++) +"  "+ tup.toString());
+                }
+                opIterator.close();
+                tx.commit();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (ParsingException e) {
+            e.printStackTrace();
+            System.exit(0);
+        }
+    }
+
+      /*
             Another Test case
             SeqScan ss1 = new SeqScan(tid, table1.getId(), "t1");
             SeqScan ss2 = new SeqScan(tid, table2.getId(), "t2");
@@ -69,30 +106,4 @@ public class LogicalPlanTest {
             JoinPredicate predicteOper = new JoinPredicate(1, Predicate.AggregateFunc.EQUALS, 1);
             Join j = new Join(predicteOper, sf1, ss2);
         */
-        OpIterator opIterator;
-        try {
-            /*
-                将逻辑计划转化成物理执行计划，实际为具体的迭代器，
-                并且迭代器会遍历执行这个物理执行计划。
-             */
-            final HashMap<String, TableStats> tableMap = new HashMap<>();
-            tableMap.put("t1", new TableStats(heapFile.getId(), 1));
-
-            opIterator = logicalPlan.physicalPlan(tid, tableMap, false);
-            try {
-                opIterator.open();
-                while (opIterator.hasNext()) {
-                    Tuple tup = opIterator.next();
-                    Debug.log(tup.toString());
-                }
-                opIterator.close();
-                Database.getBufferPool().transactionComplete(tid);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } catch (ParsingException e) {
-            e.printStackTrace();
-            System.exit(0);
-        }
-    }
 }
