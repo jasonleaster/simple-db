@@ -31,7 +31,6 @@ public class Tuple implements Serializable {
      *            instance with at least one field.
      */
     public Tuple(TupleDesc td) {
-        // some code goes here
         this.tupleDesc = td;
         this.fields = new ArrayList<>();
         initFields(tupleDesc);
@@ -41,7 +40,6 @@ public class Tuple implements Serializable {
      * @return The TupleDesc representing the schema of this tuple.
      */
     public TupleDesc getTupleDesc() {
-        // some code goes here
         return this.tupleDesc;
     }
 
@@ -61,7 +59,6 @@ public class Tuple implements Serializable {
      *            the new RecordId for this tuple.
      */
     public void setRecordId(RecordId rid) {
-        // some code goes here
         this.recordId = rid;
     }
 
@@ -74,7 +71,6 @@ public class Tuple implements Serializable {
      *            new value for the field.
      */
     public void setField(int i, Field f) {
-        // some code goes here
         fields.set(i, f);
     }
 
@@ -85,7 +81,6 @@ public class Tuple implements Serializable {
      *            field index to return. Must be a valid index.
      */
     public Field getField(int i) {
-        // some code goes here
         return fields.get(i);
     }
 
@@ -93,21 +88,19 @@ public class Tuple implements Serializable {
      * Returns the contents of this Tuple as a string. Note that to pass the
      * system tests, the format needs to be as follows:
      *
-     * column1\tcolumn2\tcolumn3\t...\tcolumnN
+     * column1\tcolumn2\tcolumn3\tableId...\tcolumnN
      *
-     * where \t is any whitespace (except a newline)
+     * where \tableId is any whitespace (except a newline)
      */
     @Override
     public String toString() {
-        // some code goes here
-        // throw new UnsupportedOperationException("Implement this");
         StringBuilder stringBuilder = new StringBuilder();
         Iterator<TupleDesc.TDItem> tdItems = this.tupleDesc.iterator();
         int i = 0;
         while (tdItems.hasNext()) {
             TupleDesc.TDItem item = tdItems.next();
-            stringBuilder.append(item.getFieldName());
-            stringBuilder.append(i);
+            stringBuilder.append("FiledName: ").append(item.getFieldName());
+            stringBuilder.append("==> Value: ").append(fields.get(i).toString());
             stringBuilder.append("\n");
 
             i++;
