@@ -30,17 +30,14 @@ public class Join extends Operator {
      * @param child2        Iterator for the right(inner) relation to join
      */
     public Join(JoinPredicate joinPredicate, OpIterator child1, OpIterator child2) {
-        // some code goes here
         this.joinPredicate = joinPredicate;
         this.children = new OpIterator[2];
         this.children[0] = child1;
         this.children[1] = child2;
         this.tupleDesc = TupleDesc.merge(children[0].getTupleDesc(), children[1].getTupleDesc());
-
     }
 
     public JoinPredicate getJoinPredicate() {
-        // some code goes here
         return joinPredicate;
     }
 
@@ -49,7 +46,6 @@ public class Join extends Operator {
      * alias or table name.
      */
     public String getJoinField1Name() {
-        // some code goes here
         return children[0].getTupleDesc().getFieldName(joinPredicate.getField1());
     }
 
@@ -58,7 +54,6 @@ public class Join extends Operator {
      * alias or table name.
      */
     public String getJoinField2Name() {
-        // some code goes here
         return children[1].getTupleDesc().getFieldName(joinPredicate.getField2());
     }
 
@@ -66,28 +61,28 @@ public class Join extends Operator {
      * @see TupleDesc#merge(TupleDesc, TupleDesc) for possible
      * implementation logic.
      */
+    @Override
     public TupleDesc getTupleDesc() {
-        // some code goes here
         return tupleDesc;
     }
 
+    @Override
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
-        // some code goes here
         super.open();
         children[0].open();
         children[1].open();
     }
 
+    @Override
     public void close() {
-        // some code goes here
         super.close();
         children[0].close();
         children[1].close();
     }
 
+    @Override
     public void rewind() throws DbException, TransactionAbortedException {
-        // some code goes here
         this.close();
         this.open();
     }
@@ -110,8 +105,8 @@ public class Join extends Operator {
      * @return The next matching tuple.
      * @see JoinPredicate#filter
      */
+    @Override
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
-        // some code goes here
         OpIterator leftOperator = children[0];
         OpIterator rightOperator = children[1];
 
@@ -155,13 +150,11 @@ public class Join extends Operator {
 
     @Override
     public OpIterator[] getChildren() {
-        // some code goes here
         return children;
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
-        // some code goes here
         this.children = children;
     }
 
