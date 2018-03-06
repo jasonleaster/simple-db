@@ -26,7 +26,7 @@ public class TableStatsTest extends SimpleDbTestBase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        this.tuples = new ArrayList<ArrayList<Integer>>();
+        this.tuples = new ArrayList<>();
         this.f = SystemTestUtil.createRandomHeapFile(10, 10200, 32, null, tuples);
 
         this.tableName = SystemTestUtil.getUUID();
@@ -111,9 +111,9 @@ public class TableStatsTest extends SimpleDbTestBase {
 
     /**
      * Verify that selectivity estimates do something reasonable.
-     * Don't bother splitting this into N different functions for
-     * each possible Op because we will probably catch any bugs here in
-     * IntHistogramTest, so we hopefully don't need all the JUnit checkboxes.
+     * Don'tableId bother splitting this into N different functions for
+     * each possible AggregateFunc because we will probably catch any bugs here in
+     * IntHistogramTest, so we hopefully don'tableId need all the JUnit checkboxes.
      */
     @Test
     public void estimateSelectivityTest() {
