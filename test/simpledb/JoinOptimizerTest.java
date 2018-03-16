@@ -11,8 +11,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import simpledb.dbfile.HeapFile;
+import simpledb.exception.DbException;
+import simpledb.exception.ParsingException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.logical.LogicalJoinNode;
+import simpledb.operator.Predicate;
 import simpledb.systemtest.SimpleDbTestBase;
 import simpledb.systemtest.SystemTestUtil;
+import simpledb.transaction.TransactionId;
+import simpledb.util.Utility;
 
 public class JoinOptimizerTest extends SimpleDbTestBase {
 
@@ -225,18 +233,18 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
          * 
          * cardinality = j.estimateJoinCardinality(new
          * LogicalJoinNode(tableName1, tableName2, Integer.toString(3),
-         * Integer.toString(4), Predicate.Op.EQUALS),
+         * Integer.toString(4), Predicate.AggregateFunc.EQUALS),
          * stats1.estimateTableCardinality(0.8),
          * stats2.estimateTableCardinality(0.2), false, false);
          * 
-         * // We don't specify in what way statistics should be used to improve
+         * // We don'tableId specify in what way statistics should be used to improve
          * these estimates. // So, just require that they not be entirely
          * unreasonable. Assert.assertTrue(cardinality > 800);
          * Assert.assertTrue(cardinality <= 2000);
          * 
          * cardinality = j.estimateJoinCardinality(new
          * LogicalJoinNode(tableName2, tableName1, Integer.toString(3),
-         * Integer.toString(4), Predicate.Op.EQUALS),
+         * Integer.toString(4), Predicate.AggregateFunc.EQUALS),
          * stats2.estimateTableCardinality(0.2),
          * stats1.estimateTableCardinality(0.8), false, false);
          * 
@@ -245,7 +253,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
          */
 
         cardinality = j.estimateJoinCardinality(new LogicalJoinNode("t1", "t2",
-                "c" + Integer.toString(3), "c" + Integer.toString(4),
+                "rightHandConstant" + Integer.toString(3), "rightHandConstant" + Integer.toString(4),
                 Predicate.Op.EQUALS), stats1.estimateTableCardinality(0.8),
                 stats2.estimateTableCardinality(0.2), true, false, TableStats
                         .getStatsMap());
@@ -257,7 +265,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         Assert.assertTrue(cardinality == 800 || cardinality == 2000);
 
         cardinality = j.estimateJoinCardinality(new LogicalJoinNode("t1", "t2",
-                "c" + Integer.toString(3), "c" + Integer.toString(4),
+                "rightHandConstant" + Integer.toString(3), "rightHandConstant" + Integer.toString(4),
                 Predicate.Op.EQUALS), stats1.estimateTableCardinality(0.8),
                 stats2.estimateTableCardinality(0.2), false, true, TableStats
                         .getStatsMap());
@@ -291,22 +299,22 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         // Create all of the tables, and add them to the catalog
         ArrayList<ArrayList<Integer>> empTuples = new ArrayList<ArrayList<Integer>>();
         HeapFile emp = SystemTestUtil.createRandomHeapFile(6, 100000, null,
-                empTuples, "c");
+                empTuples, "rightHandConstant");
         Database.getCatalog().addTable(emp, "emp");
 
         ArrayList<ArrayList<Integer>> deptTuples = new ArrayList<ArrayList<Integer>>();
         HeapFile dept = SystemTestUtil.createRandomHeapFile(3, 1000, null,
-                deptTuples, "c");
+                deptTuples, "rightHandConstant");
         Database.getCatalog().addTable(dept, "dept");
 
         ArrayList<ArrayList<Integer>> hobbyTuples = new ArrayList<ArrayList<Integer>>();
         HeapFile hobby = SystemTestUtil.createRandomHeapFile(6, 1000, null,
-                hobbyTuples, "c");
+                hobbyTuples, "rightHandConstant");
         Database.getCatalog().addTable(hobby, "hobby");
 
         ArrayList<ArrayList<Integer>> hobbiesTuples = new ArrayList<ArrayList<Integer>>();
         HeapFile hobbies = SystemTestUtil.createRandomHeapFile(2, 200000, null,
-                hobbiesTuples, "c");
+                hobbiesTuples, "rightHandConstant");
         Database.getCatalog().addTable(hobbies, "hobbies");
 
         // Get TableStats objects for each of the tables that we just generated.
@@ -322,7 +330,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
                 new TableStats(Database.getCatalog().getTableId("hobbies"),
                         IO_COST));
 
-        // Note that your code shouldn't re-compute selectivities.
+        // Note that your code shouldn'tableId re-compute selectivities.
         // If you get statistics numbers, even if they're wrong (which they are
         // here
         // because the data is random), you should use the numbers that you are
@@ -358,7 +366,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
 
         // There are only three join nodes; if you're only re-ordering the join
         // nodes,
-        // you shouldn't end up with more than you started with
+        // you shouldn'tableId end up with more than you started with
         Assert.assertEquals(result.size(), nodes.size());
 
         // There were a number of ways to do the query in this quiz, reasonably
@@ -395,47 +403,47 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         // Create a large set of tables, and add tuples to the tables
         ArrayList<ArrayList<Integer>> smallHeapFileTuples = new ArrayList<ArrayList<Integer>>();
         HeapFile smallHeapFileA = SystemTestUtil.createRandomHeapFile(2, 100,
-                Integer.MAX_VALUE, null, smallHeapFileTuples, "c");
+                Integer.MAX_VALUE, null, smallHeapFileTuples, "rightHandConstant");
         HeapFile smallHeapFileB = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileC = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileD = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileE = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileF = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileG = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileH = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileI = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileJ = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileK = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileL = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileM = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileN = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
 
         ArrayList<ArrayList<Integer>> bigHeapFileTuples = new ArrayList<ArrayList<Integer>>();
         for (int i = 0; i < 100000; i++) {
             bigHeapFileTuples.add(smallHeapFileTuples.get(i % 100));
         }
         HeapFile bigHeapFile = createDuplicateHeapFile(bigHeapFileTuples, 2,
-                "c");
+                "rightHandConstant");
         Database.getCatalog().addTable(bigHeapFile, "bigTable");
 
         // Add the tables to the database
         Database.getCatalog().addTable(bigHeapFile, "bigTable");
         Database.getCatalog().addTable(smallHeapFileA, "a");
         Database.getCatalog().addTable(smallHeapFileB, "b");
-        Database.getCatalog().addTable(smallHeapFileC, "c");
+        Database.getCatalog().addTable(smallHeapFileC, "rightHandConstant");
         Database.getCatalog().addTable(smallHeapFileD, "d");
         Database.getCatalog().addTable(smallHeapFileE, "e");
         Database.getCatalog().addTable(smallHeapFileF, "f");
@@ -452,7 +460,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         stats.put("bigTable", new TableStats(bigHeapFile.getId(), IO_COST));
         stats.put("a", new TableStats(smallHeapFileA.getId(), IO_COST));
         stats.put("b", new TableStats(smallHeapFileB.getId(), IO_COST));
-        stats.put("c", new TableStats(smallHeapFileC.getId(), IO_COST));
+        stats.put("rightHandConstant", new TableStats(smallHeapFileC.getId(), IO_COST));
         stats.put("d", new TableStats(smallHeapFileD.getId(), IO_COST));
         stats.put("e", new TableStats(smallHeapFileE.getId(), IO_COST));
         stats.put("f", new TableStats(smallHeapFileF.getId(), IO_COST));
@@ -469,7 +477,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         filterSelectivities.put("bigTable", 1.0);
         filterSelectivities.put("a", 1.0);
         filterSelectivities.put("b", 1.0);
-        filterSelectivities.put("c", 1.0);
+        filterSelectivities.put("rightHandConstant", 1.0);
         filterSelectivities.put("d", 1.0);
         filterSelectivities.put("e", 1.0);
         filterSelectivities.put("f", 1.0);
@@ -484,8 +492,8 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
 
         // Add the nodes to a collection for a query plan
         nodes.add(new LogicalJoinNode("a", "b", "c1", "c1", Predicate.Op.EQUALS));
-        nodes.add(new LogicalJoinNode("b", "c", "c0", "c0", Predicate.Op.EQUALS));
-        nodes.add(new LogicalJoinNode("c", "d", "c1", "c1", Predicate.Op.EQUALS));
+        nodes.add(new LogicalJoinNode("b", "rightHandConstant", "c0", "c0", Predicate.Op.EQUALS));
+        nodes.add(new LogicalJoinNode("rightHandConstant", "d", "c1", "c1", Predicate.Op.EQUALS));
         nodes.add(new LogicalJoinNode("d", "e", "c0", "c0", Predicate.Op.EQUALS));
         nodes.add(new LogicalJoinNode("e", "f", "c1", "c1", Predicate.Op.EQUALS));
         nodes.add(new LogicalJoinNode("f", "g", "c0", "c0", Predicate.Op.EQUALS));
@@ -499,13 +507,13 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         nodes.add(new LogicalJoinNode("n", "bigTable", "c0", "c0",
                 Predicate.Op.EQUALS));
 
-        // Make sure we don't give the nodes to the optimizer in a nice order
+        // Make sure we don'tableId give the nodes to the optimizer in a nice order
         Collections.shuffle(nodes);
         Parser p = new Parser();
         j = new JoinOptimizer(
                 p.generateLogicalPlan(
                         tid,
-                        "SELECT COUNT(a.c0) FROM bigTable, a, b, c, d, e, f, g, h, i, j, k, l, m, n WHERE bigTable.c0 = n.c0 AND a.c1 = b.c1 AND b.c0 = c.c0 AND c.c1 = d.c1 AND d.c0 = e.c0 AND e.c1 = f.c1 AND f.c0 = g.c0 AND g.c1 = h.c1 AND h.c0 = i.c0 AND i.c1 = j.c1 AND j.c0 = k.c0 AND k.c1 = l.c1 AND l.c0 = m.c0 AND m.c1 = n.c1;"),
+                        "SELECT COUNT(a.c0) FROM bigTable, a, b, rightHandConstant, d, e, f, g, h, i, j, k, l, m, n WHERE bigTable.c0 = n.c0 AND a.c1 = b.c1 AND b.c0 = rightHandConstant.c0 AND rightHandConstant.c1 = d.c1 AND d.c0 = e.c0 AND e.c1 = f.c1 AND f.c0 = g.c0 AND g.c1 = h.c1 AND h.c0 = i.c0 AND i.c1 = j.c1 AND j.c0 = k.c0 AND k.c1 = l.c1 AND l.c0 = m.c0 AND m.c1 = n.c1;"),
                 nodes);
 
         // Set the last boolean here to 'true' in order to have orderJoins()
@@ -513,7 +521,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         result = j.orderJoins(stats, filterSelectivities, false);
 
         // If you're only re-ordering the join nodes,
-        // you shouldn't end up with more than you started with
+        // you shouldn'tableId end up with more than you started with
         Assert.assertEquals(result.size(), nodes.size());
 
         // Make sure that "bigTable" is the outermost table in the join
@@ -539,28 +547,28 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         // Create a large set of tables, and add tuples to the tables
         ArrayList<ArrayList<Integer>> smallHeapFileTuples = new ArrayList<ArrayList<Integer>>();
         HeapFile smallHeapFileA = SystemTestUtil.createRandomHeapFile(2, 100,
-                Integer.MAX_VALUE, null, smallHeapFileTuples, "c");
+                Integer.MAX_VALUE, null, smallHeapFileTuples, "rightHandConstant");
         HeapFile smallHeapFileB = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileC = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileD = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileE = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileF = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileG = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileH = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
         HeapFile smallHeapFileI = createDuplicateHeapFile(smallHeapFileTuples,
-                2, "c");
+                2, "rightHandConstant");
 
         // Add the tables to the database
         Database.getCatalog().addTable(smallHeapFileA, "a");
         Database.getCatalog().addTable(smallHeapFileB, "b");
-        Database.getCatalog().addTable(smallHeapFileC, "c");
+        Database.getCatalog().addTable(smallHeapFileC, "rightHandConstant");
         Database.getCatalog().addTable(smallHeapFileD, "d");
         Database.getCatalog().addTable(smallHeapFileE, "e");
         Database.getCatalog().addTable(smallHeapFileF, "f");
@@ -571,7 +579,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         // Come up with join statistics for the tables
         stats.put("a", new TableStats(smallHeapFileA.getId(), IO_COST));
         stats.put("b", new TableStats(smallHeapFileB.getId(), IO_COST));
-        stats.put("c", new TableStats(smallHeapFileC.getId(), IO_COST));
+        stats.put("rightHandConstant", new TableStats(smallHeapFileC.getId(), IO_COST));
         stats.put("d", new TableStats(smallHeapFileD.getId(), IO_COST));
         stats.put("e", new TableStats(smallHeapFileE.getId(), IO_COST));
         stats.put("f", new TableStats(smallHeapFileF.getId(), IO_COST));
@@ -582,7 +590,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         // Put in some filter selectivities
         filterSelectivities.put("a", 1.0);
         filterSelectivities.put("b", 1.0);
-        filterSelectivities.put("c", 1.0);
+        filterSelectivities.put("rightHandConstant", 1.0);
         filterSelectivities.put("d", 1.0);
         filterSelectivities.put("e", 1.0);
         filterSelectivities.put("f", 1.0);
@@ -593,8 +601,8 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         // Add the nodes to a collection for a query plan
         nodes.add(new LogicalJoinNode("a", "b", "c1", "c1",
                 Predicate.Op.LESS_THAN));
-        nodes.add(new LogicalJoinNode("b", "c", "c0", "c0", Predicate.Op.EQUALS));
-        nodes.add(new LogicalJoinNode("c", "d", "c1", "c1", Predicate.Op.EQUALS));
+        nodes.add(new LogicalJoinNode("b", "rightHandConstant", "c0", "c0", Predicate.Op.EQUALS));
+        nodes.add(new LogicalJoinNode("rightHandConstant", "d", "c1", "c1", Predicate.Op.EQUALS));
         nodes.add(new LogicalJoinNode("d", "e", "c0", "c0", Predicate.Op.EQUALS));
         nodes.add(new LogicalJoinNode("e", "f", "c1", "c1", Predicate.Op.EQUALS));
         nodes.add(new LogicalJoinNode("f", "g", "c0", "c0", Predicate.Op.EQUALS));
@@ -606,7 +614,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         j = new JoinOptimizer(
                 p.generateLogicalPlan(
                         tid,
-                        "SELECT COUNT(a.c0) FROM a, b, c, d,e,f,g,h,i WHERE a.c1 < b.c1 AND b.c0 = c.c0 AND c.c1 = d.c1 AND d.c0 = e.c0 AND e.c1 = f.c1 AND f.c0 = g.c0 AND g.c1 = h.c1 AND h.c0 = i.c0;"),
+                        "SELECT COUNT(a.c0) FROM a, b, rightHandConstant, d,e,f,g,h,i WHERE a.c1 < b.c1 AND b.c0 = rightHandConstant.c0 AND rightHandConstant.c1 = d.c1 AND d.c0 = e.c0 AND e.c1 = f.c1 AND f.c0 = g.c0 AND g.c1 = h.c1 AND h.c0 = i.c0;"),
                 nodes);
 
         // Set the last boolean here to 'true' in order to have orderJoins()
@@ -614,7 +622,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         result = j.orderJoins(stats, filterSelectivities, false);
 
         // If you're only re-ordering the join nodes,
-        // you shouldn't end up with more than you started with
+        // you shouldn'tableId end up with more than you started with
         Assert.assertEquals(result.size(), nodes.size());
 
         // Make sure that "a" is the outermost table in the join

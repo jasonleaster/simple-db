@@ -3,6 +3,7 @@ package simpledb;
 import junit.framework.JUnit4TestAdapter;
 import org.junit.Before;
 import org.junit.Test;
+import simpledb.aggregator.AggregateFunc;
 import simpledb.aggregator.Aggregator;
 import simpledb.aggregator.IntegerAggregator;
 import simpledb.operator.OpIterator;
@@ -71,7 +72,7 @@ public class IntegerAggregatorTest extends SimpleDbTestBase {
     @Test
     public void mergeSum() throws Exception {
         scan1.open();
-        IntegerAggregator agg = new IntegerAggregator(0, Type.INT_TYPE, 1, Aggregator.Op.SUM);
+        IntegerAggregator agg = new IntegerAggregator(0, Type.INT_TYPE, 1, AggregateFunc.SUM);
 
         for (int[] step : sum) {
             agg.mergeTupleIntoGroup(scan1.next());
@@ -87,7 +88,7 @@ public class IntegerAggregatorTest extends SimpleDbTestBase {
     @Test
     public void mergeMin() throws Exception {
         scan1.open();
-        IntegerAggregator agg = new IntegerAggregator(0, Type.INT_TYPE, 1, Aggregator.Op.MIN);
+        IntegerAggregator agg = new IntegerAggregator(0, Type.INT_TYPE, 1, AggregateFunc.MIN);
 
         OpIterator it;
         for (int[] step : min) {
@@ -104,7 +105,7 @@ public class IntegerAggregatorTest extends SimpleDbTestBase {
     @Test
     public void mergeMax() throws Exception {
         scan1.open();
-        IntegerAggregator agg = new IntegerAggregator(0, Type.INT_TYPE, 1, Aggregator.Op.MAX);
+        IntegerAggregator agg = new IntegerAggregator(0, Type.INT_TYPE, 1, AggregateFunc.MAX);
 
         OpIterator it;
         for (int[] step : max) {
@@ -121,7 +122,7 @@ public class IntegerAggregatorTest extends SimpleDbTestBase {
     @Test
     public void mergeAvg() throws Exception {
         scan1.open();
-        IntegerAggregator agg = new IntegerAggregator(0, Type.INT_TYPE, 1, Aggregator.Op.AVG);
+        IntegerAggregator agg = new IntegerAggregator(0, Type.INT_TYPE, 1, AggregateFunc.AVG);
 
         OpIterator it;
         for (int[] step : avg) {
@@ -139,7 +140,7 @@ public class IntegerAggregatorTest extends SimpleDbTestBase {
     public void testIterator() throws Exception {
         // first, populate the aggregator via sum over scan1
         scan1.open();
-        IntegerAggregator agg = new IntegerAggregator(0, Type.INT_TYPE, 1, Aggregator.Op.SUM);
+        IntegerAggregator agg = new IntegerAggregator(0, Type.INT_TYPE, 1, AggregateFunc.SUM);
         try {
             while (true)
                 agg.mergeTupleIntoGroup(scan1.next());
@@ -175,7 +176,7 @@ public class IntegerAggregatorTest extends SimpleDbTestBase {
         }
         assertEquals(3, count);
 
-        // close it and check that we don't get anything
+        // close it and check that we don'tableId get anything
         it.close();
         try {
             it.next();
