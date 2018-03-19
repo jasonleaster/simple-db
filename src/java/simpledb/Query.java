@@ -1,7 +1,10 @@
 package simpledb;
 
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
+import simpledb.logical.LogicalPlan;
 import simpledb.operator.OpIterator;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
@@ -85,8 +88,9 @@ public class Query implements Serializable {
      */
     public Tuple next() throws DbException, NoSuchElementException,
             TransactionAbortedException {
-        if (!started)
+        if (!started) {
             throw new DbException("Database not started.");
+        }
 
         return op.next();
     }
