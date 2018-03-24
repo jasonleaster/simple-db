@@ -13,38 +13,65 @@ import java.io.IOException;
 
 public class SimpleDb {
 
+    private static char fieldSeparator = ',';
+
+    private enum Instruction {
+
+        CONVERT("convert"),
+
+        PRINT("print"),
+
+        PARSER("parser");
+
+        private final String value;
+
+        Instruction(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+
+    /**
+     * java -jar dist/simpledb.jar convert data.txt 2 "int,int"
+     */
     public static void main(String args[])
             throws DbException, TransactionAbortedException, IOException {
-        // convert a file
-        if (args[0].equals("convert")) {
+
+        final String instruction = args[0];
+        final String filePath = args[1];
+        final int numOfAttributes = Integer.parseInt(args[2]);
+        final String format = args[3];
+        /*
+            convert a file
+         */
+        if (Instruction.CONVERT.getValue().equals(instruction)) {
             try {
                 if (args.length < 3 || args.length > 5) {
                     System.err.println("Unexpected number of arguments to convert ");
                     return;
                 }
-                File sourceTxtFile = new File(args[1]);
-                File targetDatFile = new File(args[1].replaceAll(".txt", ".dat"));
-                int numOfAttributes = Integer.parseInt(args[2]);
+                File sourceTxtFile = new File(filePath);
+                File targetDatFile = new File(filePath.replaceAll(".txt", ".dat"));
                 Type[] ts = new Type[numOfAttributes];
-                char fieldSeparator = ',';
 
                 if (args.length == 3) {
                     for (int i = 0; i < numOfAttributes; i++) {
                         ts[i] = Type.INT_TYPE;
                     }
                 } else {
-                    String typeString = args[3];
-                    String[] typeStringAr = typeString.split(",");
+                    String[] typeStringAr = format.split(",");
                     if (typeStringAr.length != numOfAttributes) {
-                        System.err
-                                .println("The number of types does not agree with the number of columns");
+                        System.err.println("The number of types does not agree with the number of columns");
                         return;
                     }
                     int index = 0;
                     for (String s : typeStringAr) {
-                        if (s.toLowerCase().equals("int")) {
+                        if (Type.INT_TYPE.getValue().toLowerCase().equals(s.toLowerCase())) {
                             ts[index++] = Type.INT_TYPE;
-                        } else if (s.toLowerCase().equals("string")) {
+                        } else if (Type.STRING_TYPE.getValue().toLowerCase().equals(s.toLowerCase())) {
                             ts[index++] = Type.STRING_TYPE;
                         } else {
                             System.err.println("Unknown type " + s);
@@ -62,16 +89,14 @@ public class SimpleDb {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        } else if (args[0].equals("print")) {
-            File tableFile = new File(args[1]);
-            int columns = Integer.parseInt(args[2]);
-            DbFile table = Utility.openHeapFile(columns, tableFile);
+        } else if (Instruction.PRINT.getValue().equals(instruction)) {
+            File tableFile = new File(filePath);
+            DbFile table = Utility.openHeapFile(numOfAttributes, tableFile);
             TransactionId tid = new TransactionId();
             DbFileIterator it = table.iterator(tid);
 
             if (null == it) {
-                System.out
-                        .println("Error: method HeapFile.iterator(TransactionId tid) not yet implemented!");
+                System.out.println("Error: method HeapFile.iterator(TransactionId tid) not yet implemented!");
             } else {
                 it.open();
                 while (it.hasNext()) {
@@ -80,32 +105,33 @@ public class SimpleDb {
                 }
                 it.close();
             }
-        } else if (args[0].equals("parser")) {
-            // Strip the first argument and call the parser
+        } else if (Instruction.PARSER.getValue().equals(instruction)) {
+            /*
+                Strip the first argument and call the parser
+              */
             String[] newargs = new String[args.length - 1];
             for (int i = 1; i < args.length; ++i) {
                 newargs[i - 1] = args[i];
             }
 
             try {
-                //dynamically load Parser -- if it doesn't exist, print error message
+                /*
+                    dynamically load Parser -- if it doesn't exist, print error message
+                 */
                 Class<?> c = Class.forName("simpledb.Parser");
                 Class<?> s = String[].class;
 
                 java.lang.reflect.Method m = c.getMethod("main", s);
                 m.invoke(null, (java.lang.Object) newargs);
             } catch (ClassNotFoundException cne) {
-                System.out.println(
-                        "Class Parser not found -- perhaps you are trying to run the parser as a part of lab1?");
+                System.out.println("Class Parser not found -- perhaps you are trying to run the parser as a part of lab1?");
             } catch (Exception e) {
                 System.out.println("Error in parser.");
                 e.printStackTrace();
             }
-
         } else {
             System.err.println("Unknown command: " + args[0]);
             System.exit(1);
         }
     }
-
 }
