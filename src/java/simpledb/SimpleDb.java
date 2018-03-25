@@ -40,10 +40,10 @@ public class SimpleDb {
     public static void main(String args[])
             throws DbException, TransactionAbortedException, IOException {
 
-        final String instruction = args[0];
-        final String filePath = args[1];
-        final int numOfAttributes = Integer.parseInt(args[2]);
-        final String format = args[3];
+        final String instruction  = args[0];
+        final String filePath     = args[1];
+        final int numOfAttributes = args.length > 2 ? Integer.parseInt(args[2]) : 0;
+        final String format       = args.length > 3 ? args[3] : "";
         /*
             convert a file
          */
