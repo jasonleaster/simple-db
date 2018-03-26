@@ -37,7 +37,7 @@ public class SimpleDb {
     /**
      * java -jar dist/simpledb.jar convert data.txt 2 "int,int"
      */
-    public static void main(String args[])
+    public static void main(String[] args)
             throws DbException, TransactionAbortedException, IOException {
 
         final String instruction  = args[0];
@@ -109,10 +109,8 @@ public class SimpleDb {
             /*
                 Strip the first argument and call the parser
               */
-            String[] newargs = new String[args.length - 1];
-            for (int i = 1; i < args.length; ++i) {
-                newargs[i - 1] = args[i];
-            }
+            String[] newArgs = new String[args.length - 1];
+            System.arraycopy(args, 1, newArgs, 0, args.length - 1);
 
             try {
                 /*
@@ -122,7 +120,7 @@ public class SimpleDb {
                 Class<?> s = String[].class;
 
                 java.lang.reflect.Method m = c.getMethod("main", s);
-                m.invoke(null, (java.lang.Object) newargs);
+                m.invoke(null, (java.lang.Object) newArgs);
             } catch (ClassNotFoundException cne) {
                 System.out.println("Class Parser not found -- perhaps you are trying to run the parser as a part of lab1?");
             } catch (Exception e) {
