@@ -222,8 +222,9 @@ public class HeapFileEncoder {
 
                 // pad the rest of the page with zeroes
 
-                for (i = 0; i < (nPageBytes - (recordCount * nRecBytes + nHeaderBytes)); i++)
+                for (i = 0; i < (nPageBytes - (recordCount * nRecBytes + nHeaderBytes)); i++) {
                     pageStream.writeByte(0);
+                }
 
                 // write header and body to file
                 headerStream.flush();
