@@ -500,19 +500,10 @@ public class Parser {
                 return lp;
             }
         } catch (Zql.ParseException e) {
-            throw new ParsingException(
-                    "Invalid SQL expression: \n \t " + e);
+            throw new ParsingException("Invalid SQL expression: \n \t " + e);
         }
 
         throw new ParsingException("Cannot generate logical plan for expression : " + s);
-    }
-
-    public void setTransaction(Transaction t) {
-        transaction = t;
-    }
-
-    public Transaction getTransaction() {
-        return transaction;
     }
 
     public void processNextStatement(String s) {
@@ -584,18 +575,6 @@ public class Parser {
         } catch (ParsingException | Zql.ParseException | Zql.TokenMgrError e) {
             System.out.println("Invalid SQL expression: \n \t" + e.getMessage());
         }
-    }
-
-    public static void main(String argv[]) throws IOException {
-
-        if (argv.length < 1 || argv.length > 4) {
-            System.out.println("Invalid number of arguments.\n" + usage);
-            System.exit(0);
-        }
-
-        Parser p = new Parser();
-
-        p.start(argv);
     }
 
     static final String usage = "Usage: parser catalogFile [-explain] [-f queryFile]";
@@ -766,6 +745,25 @@ public class Parser {
         public void close() {
         }
 
+    }
+
+    public void setTransaction(Transaction t) {
+        transaction = t;
+    }
+
+    public Transaction getTransaction() {
+        return transaction;
+    }
+
+    public static void main(String argv[]) throws IOException {
+
+        if (argv.length < 1 || argv.length > 4) {
+            System.out.println("Invalid number of arguments.\n" + usage);
+            System.exit(0);
+        }
+
+        Parser p = new Parser();
+        p.start(argv);
     }
 }
 

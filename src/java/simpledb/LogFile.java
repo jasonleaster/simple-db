@@ -11,7 +11,13 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * LogFile implements the recovery subsystem of SimpleDb.  This class is
@@ -133,7 +139,7 @@ public class LogFile {
     // we're about to append a log record. if we weren't sure whether the
     // DB wants to do recovery, we're sure now -- it didn't. So truncate
     // the log.
-    void preAppend() throws IOException {
+    private void preAppend() throws IOException {
         totalRecords++;
         if (recoveryUndecided) {
             recoveryUndecided = false;
