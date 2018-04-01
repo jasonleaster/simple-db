@@ -1,11 +1,11 @@
 package simpledb.operator;
 
 import simpledb.Database;
-import simpledb.exception.DbException;
-import simpledb.transaction.TransactionId;
 import simpledb.dbfile.DbFile;
 import simpledb.dbfile.DbFileIterator;
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
@@ -17,8 +17,6 @@ import java.util.NoSuchElementException;
  * disk).
  */
 public class SeqScan implements OpIterator {
-
-    private static final long serialVersionUID = 1L;
 
     private TransactionId tid;
     private int tableId;
@@ -40,7 +38,6 @@ public class SeqScan implements OpIterator {
      *                   tableAlias.null, or null.null).
      */
     public SeqScan(TransactionId tid, int tableid, String tableAlias) {
-        // some code goes here
         this.tid = tid;
         this.tableId = tableid;
         this.tableAlias = tableAlias;
@@ -64,7 +61,6 @@ public class SeqScan implements OpIterator {
      * @return Return the alias of the table this operator scans.
      */
     public String getAlias() {
-        // some code goes here
         return this.tableAlias;
     }
 
@@ -113,7 +109,6 @@ public class SeqScan implements OpIterator {
     @Override
     public Tuple next() throws NoSuchElementException,
             TransactionAbortedException, DbException {
-        // some code goes here
         return dbFileIterator.next();
     }
 
