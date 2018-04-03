@@ -17,10 +17,15 @@ import simpledb.tuple.TupleDesc;
 import simpledb.tuple.TupleIterator;
 import simpledb.util.Utility;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.NoSuchElementException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class TestUtil {
     /**
@@ -288,17 +293,21 @@ public class TestUtil {
             this.cur = low;
         }
 
+        @Override
         public void open() {
             cur = low;
         }
 
+        @Override
         public void close() {
         }
 
+        @Override
         public void rewind() {
             cur = low;
         }
 
+        @Override
         public TupleDesc getTupleDesc() {
             return Utility.getTupleDesc(width);
         }
@@ -307,17 +316,20 @@ public class TestUtil {
             if (cur >= high) return null;
 
             Tuple tup = new Tuple(getTupleDesc());
-            for (int i = 0; i < width; ++i)
+            for (int i = 0; i < width; ++i) {
                 tup.setField(i, new IntField(cur));
+            }
             cur++;
             return tup;
         }
 
+        @Override
 		public boolean hasNext() throws DbException, TransactionAbortedException {
 			if (cur >= high) return false;
 			return true;
 		}
 
+		@Override
 		public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
 			if(cur >= high) throw new NoSuchElementException();
             Tuple tup = new Tuple(getTupleDesc());
