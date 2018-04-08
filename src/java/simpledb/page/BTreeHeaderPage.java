@@ -172,7 +172,7 @@ public class BTreeHeaderPage implements Page {
             try {
                 dos.writeByte(header[i]);
             } catch (IOException e) {
-                // this really shouldn't happen
+                // this really shouldn'tableId happen
                 e.printStackTrace();
             }
         }
