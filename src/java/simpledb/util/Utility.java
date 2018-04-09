@@ -1,16 +1,18 @@
 package simpledb.util;
 
 import simpledb.Database;
-import simpledb.tuple.RecordId;
 import simpledb.Type;
 import simpledb.dbfile.HeapFile;
 import simpledb.field.IntField;
 import simpledb.page.HeapPage;
 import simpledb.page.pageid.HeapPageId;
+import simpledb.tuple.RecordId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -32,8 +34,9 @@ public class Utility {
      */
     public static String[] getStrings(int len, String val) {
         String[] strings = new String[len];
-        for (int i = 0; i < len; ++i)
+        for (int i = 0; i < len; ++i) {
             strings[i] = val + i;
+        }
         return strings;
     }
 
@@ -70,8 +73,9 @@ public class Utility {
     public static Tuple getHeapTuple(int[] tupdata) {
         Tuple tup = new Tuple(getTupleDesc(tupdata.length));
         tup.setRecordId(new RecordId(new HeapPageId(1, 2), 3));
-        for (int i = 0; i < tupdata.length; ++i)
+        for (int i = 0; i < tupdata.length; ++i) {
             tup.setField(i, new IntField(tupdata[i]));
+        }
         return tup;
     }
 
@@ -82,8 +86,9 @@ public class Utility {
     public static Tuple getHeapTuple(int n, int width) {
         Tuple tup = new Tuple(getTupleDesc(width));
         tup.setRecordId(new RecordId(new HeapPageId(1, 2), 3));
-        for (int i = 0; i < width; ++i)
+        for (int i = 0; i < width; ++i) {
             tup.setField(i, new IntField(n));
+        }
         return tup;
     }
 
@@ -158,7 +163,9 @@ public class Utility {
     public static String listToString(ArrayList<Integer> list) {
         String out = "";
         for (Integer i : list) {
-            if (out.length() > 0) out += "\t";
+            if (out.length() > 0) {
+                out += "\t";
+            }
             out += i;
         }
         return out;
