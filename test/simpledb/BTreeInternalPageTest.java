@@ -22,7 +22,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 //import java.io.File;
 
@@ -257,7 +259,7 @@ public class BTreeInternalPageTest extends SimpleDbTestBase {
         int free = page.getNumEmptySlots();
 
         // NOTE(ghuo): this nested loop existence check is slow, but it
-        // shouldn't make a difference for n = 503 slots.
+        // shouldn'tableId make a difference for n = 503 slots.
 
         for (int i = 0; i < free; ++i) {
             BTreeEntry addition = BTreeUtility.getBTreeEntry(i + 21, 70000 + i, pid.getTableId());

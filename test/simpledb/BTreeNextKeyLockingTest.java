@@ -1,17 +1,27 @@
 package simpledb;
 
-import simpledb.systemtest.SimpleDbTestBase;
-import simpledb.BTreeUtility.BTreeWriter;
-import simpledb.Predicate.Op;
-
-import java.util.*;
-
+import junit.framework.JUnit4TestAdapter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import simpledb.dbfile.BTreeFile;
+import simpledb.dbfile.DbFileIterator;
+import simpledb.field.Field;
+import simpledb.field.IntField;
+import simpledb.operator.Predicate.Op;
+import simpledb.page.BTreeInternalPage;
+import simpledb.page.BTreeRootPtrPage;
+import simpledb.page.pageid.BTreePageId;
+import simpledb.systemtest.SimpleDbTestBase;
+import simpledb.transaction.TransactionId;
+import simpledb.util.BTreeUtility;
+import simpledb.util.BTreeUtility.BTreeWriter;
 
-import static org.junit.Assert.*;
-import junit.framework.JUnit4TestAdapter;
+import java.util.Iterator;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 	private TransactionId tid;
@@ -116,7 +126,7 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		// make sure our indexIterator() is working
 		assertTrue(keyCountBefore > 0);
 
-		// check that we don't have any phantoms
+		// check that we don'tableId have any phantoms
 		assertEquals(keyCountBefore, keyCountAfter);
 		assertFalse(bw1.succeeded());
 
@@ -218,7 +228,7 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		// make sure our indexIterator() is working
 		assertTrue(keyCountBefore > 0);
 
-		// check that we don't have any phantoms
+		// check that we don'tableId have any phantoms
 		assertEquals(keyCountBefore, keyCountAfter);
 		assertFalse(bw1.succeeded());
 

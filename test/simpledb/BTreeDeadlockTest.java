@@ -1,13 +1,21 @@
 package simpledb;
 
-import simpledb.Predicate.Op;
-import simpledb.BTreeUtility.*;
-import simpledb.systemtest.SimpleDbTestBase;
-
-import java.util.*;
+import junit.framework.JUnit4TestAdapter;
 import org.junit.Before;
 import org.junit.Test;
-import junit.framework.JUnit4TestAdapter;
+import simpledb.dbfile.BTreeFile;
+import simpledb.dbfile.DbFileIterator;
+import simpledb.field.IntField;
+import simpledb.operator.Predicate.Op;
+import simpledb.page.BTreeRootPtrPage;
+import simpledb.systemtest.SimpleDbTestBase;
+import simpledb.transaction.TransactionId;
+import simpledb.tuple.Tuple;
+import simpledb.util.BTreeUtility;
+import simpledb.util.BTreeUtility.BTreeWriter;
+
+import java.util.ArrayList;
+import java.util.Random;
 
 public class BTreeDeadlockTest extends SimpleDbTestBase {
 	private Random rand;
