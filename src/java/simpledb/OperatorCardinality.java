@@ -1,6 +1,5 @@
 package simpledb;
 
-//import java.util.HashMap;
 import simpledb.aggregator.Aggregator;
 import simpledb.operator.Aggregate;
 import simpledb.operator.Filter;

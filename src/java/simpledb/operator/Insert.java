@@ -2,11 +2,11 @@ package simpledb.operator;
 
 import simpledb.BufferPool;
 import simpledb.Database;
-import simpledb.exception.DbException;
-import simpledb.transaction.TransactionId;
 import simpledb.Type;
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.field.IntField;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
@@ -40,7 +40,6 @@ public class Insert extends Operator {
      *             insert.
      */
     public Insert(TransactionId tid, OpIterator child, int tableId) throws DbException {
-        // some code goes here
         this.transactionId = tid;
         this.children = new OpIterator[1];
         this.children[0] = child;
@@ -54,11 +53,12 @@ public class Insert extends Operator {
         this.hasNoMoreElements = false;
     }
 
+    @Override
     public TupleDesc getTupleDesc() {
-        // some code goes here
         return this.tupleDesc;
     }
 
+    @Override
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
         super.open();
@@ -66,6 +66,7 @@ public class Insert extends Operator {
         this.hasNoMoreElements = false;
     }
 
+    @Override
     public void close() {
         // some code goes here
         super.close();
@@ -73,8 +74,8 @@ public class Insert extends Operator {
         this.hasNoMoreElements = true;
     }
 
+    @Override
     public void rewind() throws DbException, TransactionAbortedException {
-        // some code goes here
         this.close();
         this.open();
     }
@@ -92,8 +93,8 @@ public class Insert extends Operator {
      * @see Database#getBufferPool
      * @see BufferPool#insertTuple
      */
+    @Override
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
-        // some code goes here
         if (hasNoMoreElements) {
             return null;
         }
@@ -116,13 +117,11 @@ public class Insert extends Operator {
 
     @Override
     public OpIterator[] getChildren() {
-        // some code goes here
         return children;
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
-        // some code goes here
         this.children = children;
     }
 }

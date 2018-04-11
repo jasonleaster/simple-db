@@ -20,6 +20,7 @@ public abstract class Operator implements OpIterator {
     private boolean open = false;
     private int estimatedCardinality = 0;
 
+    @Override
     public boolean hasNext() throws DbException, TransactionAbortedException {
         if (!this.open) {
             throw new IllegalStateException("Operator not yet open");
@@ -31,12 +32,14 @@ public abstract class Operator implements OpIterator {
         return next != null;
     }
 
+    @Override
     public Tuple next() throws DbException, TransactionAbortedException,
             NoSuchElementException {
         if (next == null) {
             next = fetchNext();
-            if (next == null)
+            if (next == null) {
                 throw new NoSuchElementException();
+            }
         }
 
         Tuple result = next;
@@ -50,12 +53,14 @@ public abstract class Operator implements OpIterator {
      * Closes this iterator. If overridden by a subclass, they should call
      * super.close() in order for Operator's internal state to be consistent.
      */
+    @Override
     public void close() {
         // Ensures that a future call to next() will fail
         next = null;
         this.open = false;
     }
 
+    @Override
     public void open() throws DbException, TransactionAbortedException {
         this.open = true;
     }

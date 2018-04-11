@@ -2,11 +2,11 @@ package simpledb.operator;
 
 import simpledb.BufferPool;
 import simpledb.Database;
-import simpledb.exception.DbException;
 import simpledb.Type;
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
-import simpledb.transaction.TransactionId;
 import simpledb.field.IntField;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
@@ -35,7 +35,6 @@ public class Delete extends Operator {
      *            The child operator from which to read tuples for deletion
      */
     public Delete(TransactionId t, OpIterator child) {
-        // some code goes here
         this.transactionId = t;
         this.children = new OpIterator[1];
         this.children[0] = child;
@@ -48,27 +47,27 @@ public class Delete extends Operator {
         this.hasNoMoreElements = false;
     }
 
+    @Override
     public TupleDesc getTupleDesc() {
-        // some code goes here
         return tupleDesc;
     }
 
+    @Override
     public void open() throws DbException, TransactionAbortedException {
-        // some code goes here
         super.open();
         children[0].open();
         this.hasNoMoreElements = false;
     }
 
+    @Override
     public void close() {
-        // some code goes here
         super.close();
         children[0].close();
         this.hasNoMoreElements = true;
     }
 
+    @Override
     public void rewind() throws DbException, TransactionAbortedException {
-        // some code goes here
         this.close();
         this.open();
     }
@@ -82,8 +81,8 @@ public class Delete extends Operator {
      * @see Database#getBufferPool
      * @see BufferPool#deleteTuple
      */
+    @Override
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
-        // some code goes here
         if (hasNoMoreElements) {
             return null;
         }
@@ -106,13 +105,11 @@ public class Delete extends Operator {
 
     @Override
     public OpIterator[] getChildren() {
-        // some code goes here
         return children;
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
-        // some code goes here
         this.children = children;
     }
 

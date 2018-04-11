@@ -1,14 +1,23 @@
 package simpledb;
 
+import simpledb.exception.ParsingException;
+import simpledb.logical.LogicalJoinNode;
+import simpledb.logical.LogicalPlan;
+import simpledb.logical.LogicalSubplanJoinNode;
 import simpledb.operator.Join;
 import simpledb.operator.JoinPredicate;
 import simpledb.operator.OpIterator;
 import simpledb.operator.Predicate;
 
-import java.util.*;
-
 import javax.swing.*;
-import javax.swing.tree.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.Vector;
 
 /**
  * The JoinOptimizer class is responsible for ordering a series of joins
@@ -36,7 +45,7 @@ public class JoinOptimizer {
      * Return best iterator for computing a given logical join, given the
      * specified statistics, and the provided left and right subplans. Note that
      * there is insufficient information to determine which plan should be the
-     * inner/outer here -- because OpIterator's don't provide any cardinality
+     * inner/outer here -- because OpIterator's don'tableId provide any cardinality
      * estimates, and stats only has information about the base tables. For this
      * reason, the plan1
      * 
@@ -177,8 +186,8 @@ public class JoinOptimizer {
      */
     @SuppressWarnings("unchecked")
     public <T> Set<Set<T>> enumerateSubsets(Vector<T> v, int size) {
-        Set<Set<T>> els = new HashSet<Set<T>>();
-        els.add(new HashSet<T>());
+        Set<Set<T>> els = new HashSet<>();
+        els.add(new HashSet<>());
         // Iterator<Set> it;
         // long start = System.currentTimeMillis();
 
@@ -187,15 +196,14 @@ public class JoinOptimizer {
             for (Set<T> s : els) {
                 for (T t : v) {
                     Set<T> news = (Set<T>) (((HashSet<T>) s).clone());
-                    if (news.add(t))
+                    if (news.add(t)) {
                         newels.add(news);
+                    }
                 }
             }
             els = newels;
         }
-
         return els;
-
     }
 
     /**
@@ -272,10 +280,12 @@ public class JoinOptimizer {
 
         Vector<LogicalJoinNode> prevBest;
 
-        if (this.p.getTableId(j.t1Alias) == null)
+        if (this.p.getTableId(j.t1Alias) == null) {
             throw new ParsingException("Unknown table " + j.t1Alias);
-        if (this.p.getTableId(j.t2Alias) == null)
+        }
+        if (this.p.getTableId(j.t2Alias) == null) {
             throw new ParsingException("Unknown table " + j.t2Alias);
+        }
 
         String table1Name = Database.getCatalog().getTableName(
                 this.p.getTableId(j.t1Alias));
@@ -284,8 +294,9 @@ public class JoinOptimizer {
         String table1Alias = j.t1Alias;
         String table2Alias = j.t2Alias;
 
-        Set<LogicalJoinNode> news = (Set<LogicalJoinNode>) ((HashSet<LogicalJoinNode>) joinSet)
-                .clone();
+        Set<LogicalJoinNode> news = (Set<LogicalJoinNode>)
+                ((HashSet<LogicalJoinNode>) joinSet).clone();
+
         news.remove(j);
 
         double t1cost, t2cost;
@@ -304,8 +315,8 @@ public class JoinOptimizer {
             t2card = table2Alias == null ? 0 : stats.get(table2Name)
                     .estimateTableCardinality(
                             filterSelectivities.get(j.t2Alias));
-            rightPkey = table2Alias == null ? false : isPkey(table2Alias,
-                    j.f2PureName);
+
+            rightPkey = table2Alias != null && isPkey(table2Alias, j.f2PureName);
         } else {
             // news is not empty -- figure best way to join j to news
             prevBest = pc.getOrder(news);
@@ -336,7 +347,7 @@ public class JoinOptimizer {
                         j.f2PureName);
             } else if (doesJoin(prevBest, j.t2Alias)) { // j.t2 is in prevbest
                                                         // (both
-                // shouldn't be)
+                // shouldn'tableId be)
                 t2cost = prevBestCost; // left side just has cost of whatever
                                        // left
                 // subtree is
@@ -348,8 +359,8 @@ public class JoinOptimizer {
                 leftPkey = isPkey(j.t1Alias, j.f1PureName);
 
             } else {
-                // don't consider this plan if one of j.t1 or j.t2
-                // isn't a table joined in prevBest (cross product)
+                // don'tableId consider this plan if one of j.t1 or j.t2
+                // isn'tableId a table joined in prevBest (cross product)
                 return null;
             }
         }
@@ -372,11 +383,10 @@ public class JoinOptimizer {
 
         CostCard cc = new CostCard();
 
-        cc.card = estimateJoinCardinality(j, t1card, t2card, leftPkey,
-                rightPkey, stats);
-        cc.cost = cost1;
-        cc.plan = (Vector<LogicalJoinNode>) prevBest.clone();
-        cc.plan.addElement(j); // prevbest is left -- add new join to end
+        cc.setCard(estimateJoinCardinality(j, t1card, t2card, leftPkey, rightPkey, stats));
+        cc.setCost(cost1);
+        cc.setPlan((Vector<LogicalJoinNode>) prevBest.clone());
+        cc.getPlan().addElement(j); // prevbest is left -- add new join to end
         return cc;
     }
 
@@ -386,9 +396,9 @@ public class JoinOptimizer {
      */
     private boolean doesJoin(Vector<LogicalJoinNode> joinlist, String table) {
         for (LogicalJoinNode j : joinlist) {
-            if (j.t1Alias.equals(table)
-                    || (j.t2Alias != null && j.t2Alias.equals(table)))
+            if (j.t1Alias.equals(table) || (j.t2Alias != null && j.t2Alias.equals(table))) {
                 return true;
+            }
         }
         return false;
     }
@@ -415,12 +425,12 @@ public class JoinOptimizer {
      */
     private boolean hasPkey(Vector<LogicalJoinNode> joinlist) {
         for (LogicalJoinNode j : joinlist) {
-            if (isPkey(j.t1Alias, j.f1PureName)
-                    || (j.t2Alias != null && isPkey(j.t2Alias, j.f2PureName)))
+            if (isPkey(j.t1Alias, j.f1PureName) ||
+                    (j.t2Alias != null && isPkey(j.t2Alias, j.f2PureName))) {
                 return true;
+            }
         }
         return false;
-
     }
 
     /**
@@ -446,7 +456,7 @@ public class JoinOptimizer {
         JFrame f = new JFrame("Join Plan for " + p.getQuery());
 
         // Set the default close operation for the window,
-        // or else the program won't exit when clicking close button
+        // or else the program won'tableId exit when clicking close button
         f.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         f.setVisible(true);
@@ -472,7 +482,7 @@ public class JoinOptimizer {
             String table2Name = Database.getCatalog().getTableName(
                     this.p.getTableId(j.t2Alias));
 
-            // Double c = pc.getCost(pathSoFar);
+            // Double rightHandConstant = pc.getCost(pathSoFar);
             neither = true;
 
             root = new DefaultMutableTreeNode("Join " + j + " (Cost ="
@@ -516,7 +526,7 @@ public class JoinOptimizer {
             }
             m.put(j.t2Alias, root);
 
-            // unless this table doesn't join with other tables,
+            // unless this table doesn'tableId join with other tables,
             // all tables are accessed from root
             if (!neither) {
                 for (String key : m.keySet()) {

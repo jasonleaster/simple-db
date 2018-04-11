@@ -1,11 +1,14 @@
 package simpledb.operator;
 
-import simpledb.DbException;
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * The Join operator implements the relational join operation.
@@ -22,13 +25,10 @@ public class HashEquiJoin extends Operator {
     /**
      * Constructor. Accepts to children to join and the predicate to join them
      * on
-     * 
-     * @param p
-     *            The predicate to use to join the children
-     * @param child1
-     *            Iterator for the left(outer) relation to join
-     * @param child2
-     *            Iterator for the right(inner) relation to join
+     *
+     * @param p      The predicate to use to join the children
+     * @param child1 Iterator for the left(outer) relation to join
+     * @param child2 Iterator for the right(inner) relation to join
      */
     public HashEquiJoin(JoinPredicate p, OpIterator child1, OpIterator child2) {
         this.pred = p;
@@ -41,21 +41,20 @@ public class HashEquiJoin extends Operator {
         return pred;
     }
 
+    @Override
     public TupleDesc getTupleDesc() {
         return comboTD;
     }
-    
-    public String getJoinField1Name()
-    {
-	return this.child1.getTupleDesc().getFieldName(this.pred.getField1());
+
+    public String getJoinField1Name() {
+        return this.child1.getTupleDesc().getFieldName(this.pred.getField1());
     }
 
-    public String getJoinField2Name()
-    {
-	return this.child2.getTupleDesc().getFieldName(this.pred.getField2());
+    public String getJoinField2Name() {
+        return this.child2.getTupleDesc().getFieldName(this.pred.getField2());
     }
-    
-    HashMap<Object, ArrayList<Tuple>> map = new HashMap<Object, ArrayList<Tuple>>();
+
+    HashMap<Object, ArrayList<Tuple>> map = new HashMap<>();
     public final static int MAP_SIZE = 20000;
 
     private boolean loadMap() throws DbException, TransactionAbortedException {
@@ -65,17 +64,19 @@ public class HashEquiJoin extends Operator {
             t1 = child1.next();
             ArrayList<Tuple> list = map.get(t1.getField(pred.getField1()));
             if (list == null) {
-                list = new ArrayList<Tuple>();
+                list = new ArrayList<>();
                 map.put(t1.getField(pred.getField1()), list);
             }
             list.add(t1);
-            if (cnt++ == MAP_SIZE)
+            if (cnt++ == MAP_SIZE) {
                 return true;
+            }
         }
         return cnt > 0;
 
     }
 
+    @Override
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         child1.open();
@@ -84,16 +85,18 @@ public class HashEquiJoin extends Operator {
         super.open();
     }
 
+    @Override
     public void close() {
         super.close();
         child2.close();
         child1.close();
-        this.t1=null;
-        this.t2=null;
-        this.listIt=null;
+        this.t1 = null;
+        this.t2 = null;
+        this.listIt = null;
         this.map.clear();
     }
 
+    @Override
     public void rewind() throws DbException, TransactionAbortedException {
         child1.rewind();
         child2.rewind();
@@ -115,7 +118,7 @@ public class HashEquiJoin extends Operator {
      * <p>
      * For example, if one tuple is {1,2,3} and the other tuple is {1,5,6},
      * joined on equality of the first column, then this returns {1,2,3,1,5,6}.
-     * 
+     *
      * @return The next matching tuple.
      * @see JoinPredicate#filter
      */
@@ -127,14 +130,17 @@ public class HashEquiJoin extends Operator {
 
         // set fields in combined tuple
         Tuple t = new Tuple(comboTD);
-        for (int i = 0; i < td1n; i++)
+        for (int i = 0; i < td1n; i++) {
             t.setField(i, t1.getField(i));
-        for (int i = 0; i < td2n; i++)
+        }
+        for (int i = 0; i < td2n; i++) {
             t.setField(td1n + i, t2.getField(i));
+        }
         return t;
 
     }
 
+    @Override
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         if (listIt != null && listIt.hasNext()) {
             return processList();
@@ -147,8 +153,9 @@ public class HashEquiJoin extends Operator {
             // if match, create a combined tuple and fill it with the values
             // from both tuples
             ArrayList<Tuple> l = map.get(t2.getField(pred.getField2()));
-            if (l == null)
+            if (l == null) {
                 continue;
+            }
             listIt = l.iterator();
 
             return processList();
@@ -174,5 +181,5 @@ public class HashEquiJoin extends Operator {
         this.child1 = children[0];
         this.child2 = children[1];
     }
-    
+
 }

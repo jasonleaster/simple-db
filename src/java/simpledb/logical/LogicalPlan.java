@@ -12,11 +12,6 @@ import simpledb.exception.ParsingException;
 import simpledb.field.Field;
 import simpledb.field.IntField;
 import simpledb.field.StringField;
-import simpledb.logical.LogicalFilterNode;
-import simpledb.logical.LogicalJoinNode;
-import simpledb.logical.LogicalScanNode;
-import simpledb.logical.LogicalSelectListNode;
-import simpledb.logical.LogicalSubplanJoinNode;
 import simpledb.operator.Aggregate;
 import simpledb.operator.Filter;
 import simpledb.operator.OpIterator;
@@ -71,7 +66,6 @@ public class LogicalPlan {
     private boolean oByAsc, hasOrderBy = false;
     private String oByField;
     private String query;
-//    private Query owner;
 
     /**
      * Constructor -- generate an empty logical plan
@@ -363,9 +357,8 @@ public class LogicalPlan {
 
             TableStats s = statsMap.get(Database.getCatalog().getTableName(this.getTableId(lf.getTableAlias())));
 
-            // TODO
-            double sel = 0.5; // 后面的这个函数调用还不靠谱 s.estimateSelectivity(subPlan.getTupleDesc().fieldNameToIndex(lf.getFieldPureName()), lf.getPredicateOper(), field);
-            filterSelectivity.put(lf.getTableAlias(), filterSelectivity.get(lf.getTableAlias()) * sel);
+            double selectivity = s.estimateSelectivity(subPlan.getTupleDesc().fieldNameToIndex(lf.getFieldPureName()), lf.getPredicateOper(), field);
+            filterSelectivity.put(lf.getTableAlias(), filterSelectivity.get(lf.getTableAlias()) * selectivity);
 
             //s.addSelectivityFactor(estimateFilterSelectivity(lf,statsMap));
         }

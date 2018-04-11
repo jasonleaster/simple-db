@@ -31,21 +31,29 @@ public class Predicate implements Serializable {
             return values()[i];
         }
 
+        @Override
         public String toString() {
-            if (this == EQUALS)
+            if (this == EQUALS) {
                 return "=";
-            if (this == GREATER_THAN)
+            }
+            if (this == GREATER_THAN) {
                 return ">";
-            if (this == LESS_THAN)
+            }
+            if (this == LESS_THAN) {
                 return "<";
-            if (this == LESS_THAN_OR_EQ)
+            }
+            if (this == LESS_THAN_OR_EQ) {
                 return "<=";
-            if (this == GREATER_THAN_OR_EQ)
+            }
+            if (this == GREATER_THAN_OR_EQ) {
                 return ">=";
-            if (this == LIKE)
+            }
+            if (this == LIKE) {
                 return "LIKE";
-            if (this == NOT_EQUALS)
+            }
+            if (this == NOT_EQUALS) {
                 return "<>";
+            }
             throw new IllegalStateException("impossible to reach here");
         }
 
@@ -71,18 +79,14 @@ public class Predicate implements Serializable {
     /**
      * @return the field number
      */
-    public int getField()
-    {
-        // some code goes here
+    public int getField() {
         return filedIndex;
     }
 
     /**
      * @return the operator
      */
-    public Op getOp()
-    {
-        // some code goes here
+    public Op getOp() {
         return operator;
     }
     
@@ -106,7 +110,6 @@ public class Predicate implements Serializable {
      * @return true if the comparison is true, false otherwise.
      */
     public boolean filter(Tuple t) {
-        // some code goes here
         Field otherOperand = t.getField(filedIndex);
         return otherOperand.compare(operator, operand);
     }

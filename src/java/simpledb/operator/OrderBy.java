@@ -1,19 +1,22 @@
 package simpledb.operator;
 
-import simpledb.DbException;
-import simpledb.field.Field;
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
+import simpledb.field.Field;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * OrderBy is an operator that implements a relational ORDER BY.
  */
 public class OrderBy extends Operator {
 
-    private static final long serialVersionUID = 1L;
     private OpIterator child;
     private TupleDesc td;
     private ArrayList<Tuple> childTups = new ArrayList<Tuple>();
@@ -25,18 +28,18 @@ public class OrderBy extends Operator {
     /**
      * Creates a new OrderBy node over the tuples from the iterator.
      * 
-     * @param orderbyField
+     * @param orderByField
      *            the field to which the sort is applied.
      * @param asc
      *            true if the sort order is ascending.
      * @param child
      *            the tuples to sort.
      */
-    public OrderBy(int orderbyField, boolean asc, OpIterator child) {
+    public OrderBy(int orderByField, boolean asc, OpIterator child) {
         this.child = child;
         td = child.getTupleDesc();
-        this.orderByField = orderbyField;
-        this.orderByFieldName = td.getFieldName(orderbyField);
+        this.orderByField = orderByField;
+        this.orderByFieldName = td.getFieldName(orderByField);
         this.asc = asc;
     }
     
@@ -54,27 +57,32 @@ public class OrderBy extends Operator {
     {
 	return this.orderByFieldName;
     }
-    
+
+    @Override
     public TupleDesc getTupleDesc() {
         return td;
     }
 
+    @Override
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         child.open();
         // load all the tuples in a collection, and sort it
-        while (child.hasNext())
+        while (child.hasNext()) {
             childTups.add((Tuple) child.next());
+        }
         Collections.sort(childTups, new TupleComparator(orderByField, asc));
         it = childTups.iterator();
         super.open();
     }
 
+    @Override
     public void close() {
         super.close();
         it = null;
     }
 
+    @Override
     public void rewind() throws DbException, TransactionAbortedException {
         it = childTups.iterator();
     }
@@ -86,12 +94,14 @@ public class OrderBy extends Operator {
      * @return The next tuple in the ordering, or null if there are no more
      *         tuples
      */
+    @Override
     protected Tuple fetchNext() throws NoSuchElementException,
             TransactionAbortedException, DbException {
         if (it != null && it.hasNext()) {
             return it.next();
-        } else
+        } else {
             return null;
+        }
     }
 
     @Override
@@ -104,26 +114,29 @@ public class OrderBy extends Operator {
         this.child = children[0];
     }
 
-}
+    class TupleComparator implements Comparator<Tuple> {
+        private int field;
+        private boolean asc;
 
-class TupleComparator implements Comparator<Tuple> {
-    int field;
-    boolean asc;
+        public TupleComparator(int field, boolean asc) {
+            this.field = field;
+            this.asc = asc;
+        }
 
-    public TupleComparator(int field, boolean asc) {
-        this.field = field;
-        this.asc = asc;
+        @Override
+        public int compare(Tuple o1, Tuple o2) {
+            Field t1 = (o1).getField(field);
+            Field t2 = (o2).getField(field);
+
+            if (t1.compare(Predicate.Op.EQUALS, t2)) {
+                return 0;
+            }
+            if (t1.compare(Predicate.Op.GREATER_THAN, t2)) {
+                return asc ? 1 : -1;
+            }
+            else {
+                return asc ? -1 : 1;
+            }
+        }
     }
-
-    public int compare(Tuple o1, Tuple o2) {
-        Field t1 = (o1).getField(field);
-        Field t2 = (o2).getField(field);
-        if (t1.compare(Predicate.Op.EQUALS, t2))
-            return 0;
-        if (t1.compare(Predicate.Op.GREATER_THAN, t2))
-            return asc ? 1 : -1;
-        else
-            return asc ? -1 : 1;
-    }
-    
 }
