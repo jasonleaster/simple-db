@@ -1,17 +1,32 @@
 package simpledb.systemtest;
 
-import simpledb.systemtest.SimpleDbTestBase;
-import simpledb.Predicate.Op;
-import simpledb.*;
-
-import java.util.*;
-
+import junit.framework.JUnit4TestAdapter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import simpledb.BTreeChecker;
+import simpledb.BTreeEntry;
+import simpledb.BufferPool;
+import simpledb.Database;
+import simpledb.Permissions;
+import simpledb.dbfile.BTreeFile;
+import simpledb.dbfile.DbFileIterator;
+import simpledb.operator.Predicate.Op;
+import simpledb.page.BTreeInternalPage;
+import simpledb.page.BTreeLeafPage;
+import simpledb.page.BTreeRootPtrPage;
+import simpledb.page.Page;
+import simpledb.page.pageid.BTreePageId;
+import simpledb.page.pageid.PageId;
+import simpledb.transaction.TransactionId;
+import simpledb.tuple.Tuple;
+import simpledb.util.BTreeUtility;
 
-import static org.junit.Assert.*;
-import junit.framework.JUnit4TestAdapter;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class BTreeFileDeleteTest extends SimpleDbTestBase {
 	private TransactionId tid;

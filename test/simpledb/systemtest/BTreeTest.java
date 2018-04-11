@@ -1,26 +1,28 @@
 package simpledb.systemtest;
 
-import simpledb.systemtest.SystemTestUtil;
-import static org.junit.Assert.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.NoSuchElementException;
-import java.util.Random;
-import java.util.Iterator;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ArrayBlockingQueue;
-
 import org.junit.After;
 import org.junit.Test;
-import org.junit.Before;
+import simpledb.BufferPool;
+import simpledb.Database;
+import simpledb.IndexPredicate;
+import simpledb.dbfile.BTreeFile;
+import simpledb.dbfile.DbFileIterator;
+import simpledb.field.Field;
+import simpledb.field.IntField;
+import simpledb.operator.Predicate.Op;
+import simpledb.transaction.TransactionId;
+import simpledb.tuple.Tuple;
+import simpledb.util.BTreeUtility;
+import simpledb.util.BTreeUtility.BTreeDeleter;
+import simpledb.util.BTreeUtility.BTreeInserter;
 
-import simpledb.*;
-import simpledb.BTreeUtility.*;
-import simpledb.Predicate.Op;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * System test for the BTree

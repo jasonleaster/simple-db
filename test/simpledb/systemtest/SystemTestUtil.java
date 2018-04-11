@@ -3,17 +3,17 @@ package simpledb.systemtest;
 import org.junit.Assert;
 import simpledb.BufferPool;
 import simpledb.Database;
-import simpledb.exception.DbException;
 import simpledb.Debug;
 import simpledb.HeapFileEncoder;
-import simpledb.transaction.TransactionId;
 import simpledb.Type;
 import simpledb.dbfile.DbFile;
 import simpledb.dbfile.HeapFile;
+import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.field.IntField;
 import simpledb.operator.OpIterator;
 import simpledb.operator.SeqScan;
+import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
 import simpledb.tuple.TupleDesc;
 import simpledb.util.Utility;
@@ -228,7 +228,7 @@ public class SystemTestUtil {
     }
 
     /**
-     * Checks if the sequence represents approximately a fixed sequence (c,c,c,c,..)
+     * Checks if the sequence represents approximately a fixed sequence (rightHandConstant,rightHandConstant,rightHandConstant,rightHandConstant,..)
      * ret[0] is true if the sequence is linear
      * ret[1] is the constant of the sequence if ret[0] is true.
      *

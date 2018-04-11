@@ -1,23 +1,34 @@
 package simpledb.systemtest;
 
-import simpledb.systemtest.SystemTestUtil;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
+import simpledb.BufferPool;
+import simpledb.Database;
+import simpledb.IndexPredicate;
+import simpledb.dbfile.BTreeFile;
+import simpledb.exception.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.field.IntField;
+import simpledb.operator.BTreeScan;
+import simpledb.operator.Predicate.Op;
+import simpledb.page.Page;
+import simpledb.page.pageid.PageId;
+import simpledb.transaction.TransactionId;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
+import simpledb.util.BTreeUtility;
+import simpledb.util.Utility;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Random;
-import java.util.Iterator;
 
-import org.junit.Test;
-import org.junit.Before;
-
-import simpledb.*;
-import simpledb.Predicate.Op;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Dumps the contents of a table.
