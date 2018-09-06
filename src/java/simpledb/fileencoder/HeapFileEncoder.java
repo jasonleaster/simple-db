@@ -1,5 +1,6 @@
-package simpledb;
+package simpledb.fileencoder;
 
+import simpledb.Type;
 import simpledb.dbfile.HeapFile;
 import simpledb.page.HeapPage;
 import simpledb.util.Utility;

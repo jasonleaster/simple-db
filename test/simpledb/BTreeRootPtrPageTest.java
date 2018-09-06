@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import simpledb.TestUtil.SkeletonFile;
 import simpledb.exception.DbException;
+import simpledb.fileencoder.BTreeFileEncoder;
 import simpledb.page.BTreeRootPtrPage;
 import simpledb.page.pageid.BTreePageId;
 import simpledb.systemtest.SimpleDbTestBase;

@@ -4,7 +4,7 @@ import org.junit.Assert;
 import simpledb.BufferPool;
 import simpledb.Database;
 import simpledb.Debug;
-import simpledb.HeapFileEncoder;
+import simpledb.fileencoder.HeapFileEncoder;
 import simpledb.Type;
 import simpledb.dbfile.DbFile;
 import simpledb.dbfile.HeapFile;

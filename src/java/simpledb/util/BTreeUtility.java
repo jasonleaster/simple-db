@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 
 import simpledb.BTreeEntry;
-import simpledb.BTreeFileEncoder;
+import simpledb.fileencoder.BTreeFileEncoder;
 import simpledb.page.BTreeRootPtrPage;
 import simpledb.BufferPool;
 import simpledb.Database;

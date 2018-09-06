@@ -15,6 +15,7 @@ import simpledb.dbfile.HeapFile;
 import simpledb.exception.DbException;
 import simpledb.exception.ParsingException;
 import simpledb.exception.TransactionAbortedException;
+import simpledb.fileencoder.HeapFileEncoder;
 import simpledb.logical.LogicalJoinNode;
 import simpledb.operator.Predicate;
 import simpledb.systemtest.SimpleDbTestBase;

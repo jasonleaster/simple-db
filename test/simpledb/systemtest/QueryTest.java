@@ -9,7 +9,7 @@ import simpledb.BufferPool;
 import simpledb.Database;
 import simpledb.exception.DbException;
 import simpledb.dbfile.HeapFile;
-import simpledb.HeapFileEncoder;
+import simpledb.fileencoder.HeapFileEncoder;
 import simpledb.Parser;
 import simpledb.TableStats;
 import simpledb.transaction.Transaction;

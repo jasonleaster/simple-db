@@ -1,7 +1,7 @@
 package simpledb.dbfile;
 
 import simpledb.BTreeEntry;
-import simpledb.BTreeFileEncoder;
+import simpledb.fileencoder.BTreeFileEncoder;
 import simpledb.BufferPool;
 import simpledb.Database;
 import simpledb.Debug;
@@ -27,7 +27,6 @@ import simpledb.tuple.TupleDesc;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;

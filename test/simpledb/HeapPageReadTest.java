@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import simpledb.TestUtil.SkeletonFile;
 import simpledb.field.IntField;
+import simpledb.fileencoder.HeapFileEncoder;
 import simpledb.page.HeapPage;
 import simpledb.page.pageid.HeapPageId;
 import simpledb.systemtest.SimpleDbTestBase;

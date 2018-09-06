@@ -1,5 +1,9 @@
-package simpledb;
+package simpledb.fileencoder;
 
+import simpledb.BTreeEntry;
+import simpledb.BufferPool;
+import simpledb.Database;
+import simpledb.Type;
 import simpledb.dbfile.BTreeFile;
 import simpledb.dbfile.DbFileIterator;
 import simpledb.dbfile.HeapFile;
