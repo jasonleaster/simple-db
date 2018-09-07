@@ -1,7 +1,6 @@
 package simpledb.dbfile;
 
 import simpledb.BTreeEntry;
-import simpledb.fileencoder.BTreeFileEncoder;
 import simpledb.BufferPool;
 import simpledb.Database;
 import simpledb.Debug;
@@ -11,13 +10,14 @@ import simpledb.Type;
 import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.field.Field;
+import simpledb.fileencoder.BTreeFileEncoder;
 import simpledb.operator.Predicate.Op;
-import simpledb.page.BTreeHeaderPage;
-import simpledb.page.BTreeInternalPage;
-import simpledb.page.BTreeLeafPage;
-import simpledb.page.BTreePage;
-import simpledb.page.BTreeRootPtrPage;
 import simpledb.page.Page;
+import simpledb.page.btree.BTreeHeaderPage;
+import simpledb.page.btree.BTreeInternalPage;
+import simpledb.page.btree.BTreeLeafPage;
+import simpledb.page.btree.BTreePage;
+import simpledb.page.btree.BTreeRootPtrPage;
 import simpledb.page.pageid.BTreePageId;
 import simpledb.page.pageid.PageId;
 import simpledb.transaction.TransactionId;

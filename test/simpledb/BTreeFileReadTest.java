@@ -9,8 +9,8 @@ import simpledb.dbfile.DbFileIterator;
 import simpledb.field.Field;
 import simpledb.field.IntField;
 import simpledb.operator.Predicate.Op;
-import simpledb.page.BTreeLeafPage;
-import simpledb.page.BTreeRootPtrPage;
+import simpledb.page.btree.BTreeLeafPage;
+import simpledb.page.btree.BTreeRootPtrPage;
 import simpledb.page.pageid.BTreePageId;
 import simpledb.systemtest.SimpleDbTestBase;
 import simpledb.transaction.TransactionId;
@@ -21,7 +21,11 @@ import simpledb.util.Utility;
 
 import java.util.NoSuchElementException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class BTreeFileReadTest extends SimpleDbTestBase {
     private BTreeFile f;

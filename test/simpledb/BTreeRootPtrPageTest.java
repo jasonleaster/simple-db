@@ -6,7 +6,7 @@ import org.junit.Test;
 import simpledb.TestUtil.SkeletonFile;
 import simpledb.exception.DbException;
 import simpledb.fileencoder.BTreeFileEncoder;
-import simpledb.page.BTreeRootPtrPage;
+import simpledb.page.btree.BTreeRootPtrPage;
 import simpledb.page.pageid.BTreePageId;
 import simpledb.systemtest.SimpleDbTestBase;
 import simpledb.systemtest.SystemTestUtil;
@@ -20,23 +20,28 @@ import static org.junit.Assert.assertEquals;
 //import java.io.File;
 
 public class BTreeRootPtrPageTest extends SimpleDbTestBase {
-    private BTreePageId pid;
 
-    public static final byte[] EXAMPLE_DATA;
+    private static final byte[] EXAMPLE_DATA;
 
     static {
-        // Identify the root page and page category
+        /*
+          Identify the root page and page category
+         */
         int root = 1;
         int rootCategory = BTreePageId.LEAF;
         int header = 2;
 
-        // Convert it to a BTreeRootPtrPage
+        /*
+           Convert it to a BTreeRootPtrPage
+         */
         try {
             EXAMPLE_DATA = BTreeFileEncoder.convertToRootPtrPage(root, rootCategory, header);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
+    private BTreePageId pid;
 
     /**
      * Set up initial resources for each unit test.

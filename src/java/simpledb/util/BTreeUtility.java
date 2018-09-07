@@ -1,5 +1,28 @@
 package simpledb.util;
 
+import simpledb.BTreeEntry;
+import simpledb.BufferPool;
+import simpledb.Database;
+import simpledb.IndexPredicate;
+import simpledb.Type;
+import simpledb.dbfile.BTreeFile;
+import simpledb.dbfile.DbFileIterator;
+import simpledb.exception.DbException;
+import simpledb.exception.TransactionAbortedException;
+import simpledb.field.Field;
+import simpledb.field.IntField;
+import simpledb.fileencoder.BTreeFileEncoder;
+import simpledb.operator.Predicate.Op;
+import simpledb.page.btree.BTreeInternalPage;
+import simpledb.page.btree.BTreeLeafPage;
+import simpledb.page.btree.BTreePage;
+import simpledb.page.btree.BTreeRootPtrPage;
+import simpledb.page.pageid.BTreePageId;
+import simpledb.transaction.TransactionId;
+import simpledb.tuple.RecordId;
+import simpledb.tuple.Tuple;
+import simpledb.tuple.TupleDesc;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -11,29 +34,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
-
-import simpledb.BTreeEntry;
-import simpledb.fileencoder.BTreeFileEncoder;
-import simpledb.page.BTreeRootPtrPage;
-import simpledb.BufferPool;
-import simpledb.Database;
-import simpledb.exception.DbException;
-import simpledb.IndexPredicate;
-import simpledb.operator.Predicate.Op;
-import simpledb.tuple.RecordId;
-import simpledb.transaction.TransactionId;
-import simpledb.Type;
-import simpledb.dbfile.BTreeFile;
-import simpledb.dbfile.DbFileIterator;
-import simpledb.exception.TransactionAbortedException;
-import simpledb.field.Field;
-import simpledb.field.IntField;
-import simpledb.page.BTreeInternalPage;
-import simpledb.page.BTreeLeafPage;
-import simpledb.page.BTreePage;
-import simpledb.page.pageid.BTreePageId;
-import simpledb.tuple.Tuple;
-import simpledb.tuple.TupleDesc;
 
 /** Helper methods used for testing and implementing random features. */
 public class BTreeUtility {
@@ -67,8 +67,9 @@ public class BTreeUtility {
 	public static Tuple getBTreeTuple(int[] tupdata) {
 		Tuple tup = new Tuple(Utility.getTupleDesc(tupdata.length));
 		tup.setRecordId(new RecordId(new BTreePageId(1, 2, BTreePageId.LEAF), 3));
-		for (int i = 0; i < tupdata.length; ++i)
+		for (int i = 0; i < tupdata.length; ++i) {
 			tup.setField(i, new IntField(tupdata[i]));
+		}
 		return tup;
 	}
 	
@@ -79,8 +80,9 @@ public class BTreeUtility {
 	public static Tuple getBTreeTuple(ArrayList<Integer> tupdata) {
 		Tuple tup = new Tuple(Utility.getTupleDesc(tupdata.size()));
 		tup.setRecordId(new RecordId(new BTreePageId(1, 2, BTreePageId.LEAF), 3));
-		for (int i = 0; i < tupdata.size(); ++i)
+		for (int i = 0; i < tupdata.size(); ++i) {
 			tup.setField(i, new IntField(tupdata.get(i)));
+		}
 		return tup;
 	}
 
@@ -91,8 +93,9 @@ public class BTreeUtility {
 	public static Tuple getBTreeTuple(int n, int width) {
 		Tuple tup = new Tuple(Utility.getTupleDesc(width));
 		tup.setRecordId(new RecordId(new BTreePageId(1, 2, BTreePageId.LEAF), 3));
-		for (int i = 0; i < width; ++i)
+		for (int i = 0; i < width; ++i) {
 			tup.setField(i, new IntField(n));
+		}
 		return tup;
 	}
 

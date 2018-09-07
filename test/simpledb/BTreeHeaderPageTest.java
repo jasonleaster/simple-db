@@ -5,14 +5,16 @@ import org.junit.Before;
 import org.junit.Test;
 import simpledb.TestUtil.SkeletonFile;
 import simpledb.exception.DbException;
-import simpledb.page.BTreeHeaderPage;
+import simpledb.page.btree.BTreeHeaderPage;
 import simpledb.page.pageid.BTreePageId;
 import simpledb.systemtest.SimpleDbTestBase;
 import simpledb.systemtest.SystemTestUtil;
 import simpledb.transaction.TransactionId;
 import simpledb.util.Utility;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class BTreeHeaderPageTest extends SimpleDbTestBase {
     private BTreePageId pid;

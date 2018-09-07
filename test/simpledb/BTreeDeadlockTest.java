@@ -7,7 +7,7 @@ import simpledb.dbfile.BTreeFile;
 import simpledb.dbfile.DbFileIterator;
 import simpledb.field.IntField;
 import simpledb.operator.Predicate.Op;
-import simpledb.page.BTreeRootPtrPage;
+import simpledb.page.btree.BTreeRootPtrPage;
 import simpledb.systemtest.SimpleDbTestBase;
 import simpledb.transaction.TransactionId;
 import simpledb.tuple.Tuple;
