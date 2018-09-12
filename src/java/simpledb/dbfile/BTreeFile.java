@@ -6,7 +6,6 @@ import simpledb.Database;
 import simpledb.Debug;
 import simpledb.IndexPredicate;
 import simpledb.Permissions;
-import simpledb.Type;
 import simpledb.exception.DbException;
 import simpledb.exception.TransactionAbortedException;
 import simpledb.field.Field;
@@ -313,52 +312,43 @@ public class BTreeFile implements DbFile {
         // the new entry.  getParentWithEmptySlots() will be useful here.  Don't forget to update
         // the sibling pointers of all the affected leaf pages.  Return the page into which a
         // tuple with the given key field should be inserted.
-        final int pageSize = BufferPool.getPageSize();
-        Iterator<Tuple> tuples = page.iterator();
-        int totalTuples = page.getNumTuples();
-        if (totalTuples <= 1) {
-            throw new DbException("The number of total tuples can be less than 1");
-        }
-        ArrayList<Tuple> newPageTuples = new ArrayList<>(totalTuples / 2);
-        for (int i = 0; i < totalTuples / 2; i++) {
+        final BTreeLeafPage leftPage = page;
+        final BTreeLeafPage rightPage = (BTreeLeafPage) this.getEmptyPage(tid, dirtyPages, BTreePageId.LEAF);
+
+        int cnt = 0;
+        final Iterator<Tuple> tuples = leftPage.iterator();
+        while (tuples.hasNext()) {
             Tuple tuple = tuples.next();
-            newPageTuples.add(tuple);
-            page.deleteTuple(tuple);
+            if (cnt > (leftPage.getNumTuples() / 2)) {
+                leftPage.deleteTuple(tuple);
+                rightPage.insertTuple(tuple);
+            }
+            cnt++;
         }
 
-        TupleDesc tupleDesc = newPageTuples.get(0).getTupleDesc();
-        int numFiles = tupleDesc.numFields();
-        Type[] typeAr = new Type[numFiles];
-        for (int i = 0; i < numFiles; i++) {
-            typeAr[i] = tupleDesc.getFieldType(i);
-        }
+        /*
+            不能忘记还有原来老的右边页面的双向指针需要更新
+         */
+        final BTreePageId oldRightPid = leftPage.getRightSiblingId();
+        BTreeLeafPage oldRightPage = (BTreeLeafPage) this.getPage(tid, dirtyPages, oldRightPid, Permissions.READ_WRITE);
+        oldRightPage.setLeftSiblingId(rightPage.getId());
 
-        // byte[] leafPageBytes = BTreeFileEncoder.convertToLeafPage(newPageTuples, pageSize, numFiles, typeAr, keyField);
-        BTreeLeafPage newLeafPage = (BTreeLeafPage) this.getEmptyPage(tid, dirtyPages, BTreePageId.LEAF);
+        rightPage.setRightSiblingId(leftPage.getRightSiblingId());
+        rightPage.setLeftSiblingId(leftPage.getId());
+        leftPage.setRightSiblingId(rightPage.getId());
 
-        for (Tuple tuple : newPageTuples) {
-            newLeafPage.insertTuple(tuple);
-        }
 
-        //newLeafPage = new BTreeLeafPage(newPageId, leafPageBytes, keyField);
+
+        BTreeEntry newBTreeEntry = new BTreeEntry(field, leftPage.getId(), rightPage.getId());
         BTreeInternalPage internalPage = this.getParentWithEmptySlots(tid, dirtyPages, page.getParentId(), field);
-
-        BTreeEntry newBTreeEntry = new BTreeEntry(field, page.getId(), newLeafPage.getId());
-        if (internalPage.getNumEmptySlots() == 0) {
-            internalPage = this.splitInternalPage(tid, dirtyPages, internalPage, field);
-        }
-
-        newLeafPage.setRightSiblingId(page.getId());
-        newLeafPage.setLeftSiblingId(page.getLeftSiblingId());
-        page.setLeftSiblingId(page.getId());
-
         internalPage.insertEntry(newBTreeEntry);
 
-        dirtyPages.put(page.getId(), page);
-        dirtyPages.put(newLeafPage.getId(), newLeafPage);
+        dirtyPages.put(oldRightPage.getId(), oldRightPage);
+        dirtyPages.put(leftPage.getId(), leftPage);
+        dirtyPages.put(rightPage.getId(), rightPage);
         dirtyPages.put(internalPage.getId(), internalPage);
 
-        return newLeafPage;
+        return rightPage;
     }
 
     /**
@@ -713,6 +703,7 @@ public class BTreeFile implements DbFile {
             page.insertTuple(tuple);
         }
         // TODO 更新父节点数据
+
     }
 
     /**
@@ -735,8 +726,12 @@ public class BTreeFile implements DbFile {
             throws DbException, IOException, TransactionAbortedException {
         BTreePageId leftSiblingId = null;
         BTreePageId rightSiblingId = null;
-        if (leftEntry != null) leftSiblingId = leftEntry.getLeftChild();
-        if (rightEntry != null) rightSiblingId = rightEntry.getRightChild();
+        if (leftEntry != null)  {
+            leftSiblingId = leftEntry.getLeftChild();
+        }
+        if (rightEntry != null) {
+            rightSiblingId = rightEntry.getRightChild();
+        }
 
         int maxEmptySlots = page.getMaxEntries() - page.getMaxEntries() / 2; // ceiling
         if (leftSiblingId != null) {

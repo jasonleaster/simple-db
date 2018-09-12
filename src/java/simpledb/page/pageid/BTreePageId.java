@@ -52,6 +52,7 @@ public class BTreePageId implements PageId {
     /**
      * @return the table associated with this PageId
      */
+    @Override
     public int getTableId() {
         return tableId;
     }
@@ -77,6 +78,7 @@ public class BTreePageId implements PageId {
      * key in a hash table in the BufferPool, for example.)
      * @see BufferPool
      */
+    @Override
     public int hashCode() {
         int code = (tableId << 16) + (pgNo << 2) + pgcateg;
         return code;
@@ -89,15 +91,18 @@ public class BTreePageId implements PageId {
      * @return true if the objects are equal (e.g., page numbers, table
      * ids and pgcateg are the same)
      */
+    @Override
     public boolean equals(Object o) {
-        if (!(o instanceof BTreePageId))
+        if (!(o instanceof BTreePageId)) {
             return false;
+        }
         BTreePageId p = (BTreePageId) o;
         return tableId == p.tableId && pgNo == p.pgNo && pgcateg == p.pgcateg;
     }
 
+    @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append("(tableId: ").append(tableId)
                 .append(", pgNo: ").append(pgNo)
                 .append(", pgcateg: ").append(categToString(pgcateg))
@@ -112,8 +117,9 @@ public class BTreePageId implements PageId {
      * number of integers that corresponds to number of args to one of the
      * constructors.
      */
+    @Override
     public int[] serialize() {
-        int data[] = new int[3];
+        int[] data = new int[3];
 
         data[0] = tableId;
         data[1] = pgNo;
