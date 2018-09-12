@@ -150,6 +150,7 @@ public class BTreeRootPtrPage implements Page {
         return new byte[len]; //all 0
     }
 
+    @Override
     public void markDirty(boolean dirty, TransactionId tid) {
         this.dirty = dirty;
         if (dirty) {

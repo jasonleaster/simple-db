@@ -110,6 +110,7 @@ public class BTreeHeaderPage implements Page {
      * Return a view of this page before it was modified
      * -- used by recovery
      */
+    @Override
     public BTreeHeaderPage getBeforeImage() {
         try {
             byte[] oldDataRef = null;
@@ -125,6 +126,7 @@ public class BTreeHeaderPage implements Page {
         return null;
     }
 
+    @Override
     public void setBeforeImage() {
         synchronized (oldDataLock) {
             oldData = getPageData().clone();
@@ -134,6 +136,7 @@ public class BTreeHeaderPage implements Page {
     /**
      * @return the PageId associated with this page.
      */
+    @Override
     public BTreePageId getId() {
         return pid;
     }
@@ -149,6 +152,7 @@ public class BTreeHeaderPage implements Page {
      * @return A byte array correspond to the bytes of this page.
      * @see #BTreeHeaderPage
      */
+    @Override
     public byte[] getPageData() {
         int pageSize = BufferPool.getPageSize();
         ByteArrayOutputStream baos = new ByteArrayOutputStream(pageSize);
@@ -269,19 +273,23 @@ public class BTreeHeaderPage implements Page {
      * Marks this page as dirty/not dirty and record that transaction
      * that did the dirtying
      */
+    @Override
     public void markDirty(boolean dirty, TransactionId tid) {
         this.dirty = dirty;
-        if (dirty) this.dirtier = tid;
+        if (dirty) {
+            this.dirtier = tid;
+        }
     }
 
     /**
      * Returns the tid of the transaction that last dirtied this page, or null if the page is not dirty
      */
     public TransactionId isDirty() {
-        if (this.dirty)
+        if (this.dirty) {
             return this.dirtier;
-        else
+        } else {
             return null;
+        }
     }
 
     /**
@@ -301,10 +309,11 @@ public class BTreeHeaderPage implements Page {
         int headerbyte = (i - headerbit) / 8;
 
         Debug.log(1, "BTreeHeaderPage.setSlot: setting slot %d to %b", i, value);
-        if (value)
+        if (value) {
             header[headerbyte] |= 1 << headerbit;
-        else
+        } else {
             header[headerbyte] &= (0xFF ^ (1 << headerbit));
+        }
     }
 
     /**
