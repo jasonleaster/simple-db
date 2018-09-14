@@ -869,17 +869,28 @@ public class BTreeFile implements DbFile {
         // Delete the entry in the parent corresponding to the two pages that are merging -
         // deleteParentEntry() will be useful here
         Iterator<Tuple> tupleIterator = rightPage.iterator();
-        List<Tuple> tuplesToBeMoved = new ArrayList<>();
-        while (tupleIterator.hasNext()) {
+        while (tupleIterator.hasNext())
+        {
             Tuple tuple = tupleIterator.next();
-            leftPage.insertTuple(tuple);
-            tuplesToBeMoved.add(tuple);
-        }
 
-        for (Tuple tuple : tuplesToBeMoved) {
             rightPage.deleteTuple(tuple);
+            leftPage.insertTuple(tuple);
         }
 
+        dirtyPages.put(leftPage.getId(), leftPage);
+        dirtyPages.put(rightPage.getId(), rightPage);
+        dirtyPages.put(parent.getId(), parent);
+
+        leftPage.setRightSiblingId(rightPage.getRightSiblingId());
+        if (rightPage.getRightSiblingId() != null) {
+            BTreeLeafPage rrpage = (BTreeLeafPage) this.getPage(tid, dirtyPages, rightPage.getRightSiblingId(), Permissions.READ_ONLY);
+            rrpage.setLeftSiblingId(leftPage.getId());
+        }
+
+        rightPage.setRightSiblingId(null);
+        rightPage.setLeftSiblingId(null);
+
+        this.setEmptyPage(tid, dirtyPages, rightPage.getId().getPageNumber());
         this.deleteParentEntry(tid, dirtyPages, leftPage, parent, parentEntry);
     }
 
@@ -910,6 +921,21 @@ public class BTreeFile implements DbFile {
         // and make the right page available for reuse
         // Delete the entry in the parent corresponding to the two pages that are merging -
         // deleteParentEntry() will be useful here
+        Iterator<BTreeEntry> rightIter = rightPage.iterator();
+        BTreeEntry pe = new BTreeEntry(parentEntry.getKey(), leftPage.reverseIterator().next().getRightChild(), rightPage.iterator().next().getLeftChild());
+        leftPage.insertEntry(pe);
+        while (rightIter.hasNext()) {
+            BTreeEntry entry = rightIter.next();
+
+            rightPage.deleteKeyAndLeftChild(entry);
+            leftPage.insertEntry(entry);
+        }
+
+        this.deleteParentEntry(tid, dirtypages, leftPage, parent, parentEntry);
+
+        this.setEmptyPage(tid, dirtypages, rightPage.getId().getPageNumber());
+        this.updateParentPointers(tid, dirtypages, parent);
+        this.updateParentPointers(tid, dirtypages, leftPage);
     }
 
     /**
